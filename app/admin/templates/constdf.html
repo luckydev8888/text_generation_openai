@@ -1,0 +1,130 @@
+{% extends "admin_base.html" %} {% block title %}TextAnalizer Tutelas - Admin{%
+endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row page-titles mx-0">
+    <div class="col-sm-6 p-md-0">
+      <div class="welcome-text">
+        <span class="ml-1">Constitución</span>
+      </div>
+    </div>
+    <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="javascript:void(0)">Table</a></li>
+        <li class="breadcrumb-item active">
+          <a href="javascript:void(0)">Tabla de Datos de la Constitución</a>
+        </li>
+      </ol>
+    </div>
+  </div>
+  <!-- row -->
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title">Tabla de Datos de la Constitución</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6">
+              <div class="btn-group mb-2 btn-group-lg">
+                <button id="importdf_csv" class="btn btn-primary" type="button">
+                  Update from csv file
+                </button>
+                <button
+                  id="upload_constdf"
+                  class="btn btn-warning"
+                  type="button"
+                >
+                  Upload to Open ai
+                </button>
+              </div>
+            </div>
+
+            <div class="col-6">
+              <div class="d-flex flex-row-reverse">
+                <button id="add_const" class="btn btn-primary" type="button">
+                  Add Constitución
+                </button>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="table-responsive">
+                <table
+                  id="ConstDf_datatable"
+                  class="display user-table table-hover"
+                  style="min-width: 845px"
+                >
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Articulo</th>
+                      <th>Texto</th>
+                      <th>Tutela</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="add_const_model"
+    class="modal fade bd-example-modal-lg"
+    tabindex="-1"
+    role="dialog"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Constitución</h5>
+          <button type="button" class="close" data-dismiss="modal">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="d-none" id="_id">123</div>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <select class="form-control" id="art_type">
+                <option val="Articulo">Articulo</option>
+                <option val="Articulo Transitorio">Articulo Transitorio</option>
+              </select>
+            </div>
+            <input
+              type="number"
+              class="form-control"
+              id="articulo"
+              min="1"
+              step="1"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="comment">Texto:</label>
+            <textarea class="form-control" rows="5" id="texto"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Close
+          </button>
+          <button type="button" class="btn btn-primary" id="const_save">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block user_js %}
+<script src="{{ url_for('admin.static', filename='vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/admin/constdf.js') }}"></script>
+{% endblock %}

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from . import user_api_bp
 from .script import openAI_response
 from .utils import find_in_csv, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia
+from .models import get_users
 
 load_dotenv()
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
@@ -188,4 +189,11 @@ def analysis_resultados():
 
         return jsonify(response), 200
     
-
+@user_api_bp.route('/users/get', methods=['POST'])
+def users_get():
+    result_data = get_users()
+    response = {
+        'message': result_data
+    }
+    print(response)
+    return  response, 200
