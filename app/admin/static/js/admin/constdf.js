@@ -55,11 +55,6 @@ $(document).ready(function () {
     ]
   })
 
-  // const_table.on('click', 'tbody tr', function () {
-  //   var $row = const_table.row(this).nodes().to$()
-  //   $('.bd-example-modal-lg').modal('show')
-  // })
-
   $('#add_const').on('click', function () {
     $('#add_const_model #_id')[0].innerHTML = ''
     $('#add_const_model #art_type')[0].value = 'Articulo'
@@ -86,7 +81,6 @@ $(document).ready(function () {
         tutela
       },
       success: function (response) {
-        console.log('ok')
         showToast('Saved successfully!')
         $('.bd-example-modal-lg').modal('hide')
         const_table.draw()
@@ -107,7 +101,6 @@ $(document).ready(function () {
         id
       },
       success: function (response) {
-        console.log('ok')
         showToast('Deleted successfully!')
         $('#delete_const_modal').modal('hide')
         const_table.draw()
