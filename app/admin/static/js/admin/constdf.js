@@ -12,6 +12,7 @@ function editConstDf (order) {
   $('#add_const_model #articulo')[0].value = rowData.articulo
     .split(' ')
     .slice(-1)
+  $('#add_const_model #tutela_type')[0].value = rowData.tutela
   $('#add_const_model #texto')[0].value = rowData.texto
   $('#add_const_model').modal('show')
 }
@@ -27,7 +28,7 @@ $(document).ready(function () {
     serverSide: true,
     paging: true,
     ajax: {
-      url: '/admin/constdf/get',
+      url: 'get',
       type: 'POST'
     },
     order: [[1, 'desc']],
@@ -59,6 +60,7 @@ $(document).ready(function () {
     $('#add_const_model #_id')[0].innerHTML = ''
     $('#add_const_model #art_type')[0].value = 'Articulo'
     $('#add_const_model #articulo')[0].value = ''
+    $('#add_const_model #tutela_type')[0].value = 'no'
     $('#add_const_model #texto')[0].value = ''
     $('#add_const_model').modal('show')
   })
@@ -69,9 +71,10 @@ $(document).ready(function () {
     const number = $('#add_const_model #articulo')[0].value
     const texto = $('#add_const_model #texto')[0].value
     const tutela = $('#add_const_model #tutela_type')[0].value
+    const page_info = const_table.page.info()
 
     $.ajax({
-      url: 'constdf/save',
+      url: 'save',
       type: 'POST',
       data: {
         id,
@@ -83,7 +86,7 @@ $(document).ready(function () {
       success: function (response) {
         showToast('Saved successfully!')
         $('.bd-example-modal-lg').modal('hide')
-        const_table.draw()
+        const_table.page(page_info.page).draw('page')
       },
       error: function (xhr, status, error) {
         showToast('Error: ' + xhr.responseText)
@@ -94,8 +97,10 @@ $(document).ready(function () {
 
   $('#const_delete').on('click', function () {
     const id = $('#delete_const_modal #delete_id')[0].innerHTML
+    const page_info = const_table.page.info()
+
     $.ajax({
-      url: 'constdf/delete',
+      url: 'delete',
       type: 'POST',
       data: {
         id
@@ -103,7 +108,7 @@ $(document).ready(function () {
       success: function (response) {
         showToast('Deleted successfully!')
         $('#delete_const_modal').modal('hide')
-        const_table.draw()
+        const_table.page(page_info.page).draw('page')
       },
       error: function (xhr, status, error) {
         showToast('Error: ' + xhr.responseText)
