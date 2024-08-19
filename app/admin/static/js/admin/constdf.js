@@ -27,6 +27,15 @@ $(document).ready(function () {
   const_table = $('#ConstDf_datatable').DataTable({
     serverSide: true,
     paging: true,
+    initComplete: function (settings, json) {
+      $('#body_preloader').hide() // Hide the loading message when done
+    },
+    preDrawCallback: function (settings) {
+      $('#body_preloader').show() // Show the loading message before drawing the table
+    },
+    drawCallback: function (settings) {
+      $('#body_preloader').hide() // Hide the loading message after drawing the table
+    },
     ajax: {
       url: 'get',
       type: 'POST'

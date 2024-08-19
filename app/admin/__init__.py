@@ -4,6 +4,8 @@ admin_bp = Blueprint('admin', __name__, template_folder='templates', static_fold
 
 from .main_routes import main_bp
 from .constdf_routes import constdf_bp
+from .sentencias_routes import sentencias_bp
 
 admin_bp.register_blueprint(main_bp)
 admin_bp.register_blueprint(constdf_bp)
+admin_bp.register_blueprint(sentencias_bp)

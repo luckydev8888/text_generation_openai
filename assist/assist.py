@@ -4,6 +4,7 @@ import csv
 import re
 from bs4 import BeautifulSoup
 import requests
+import json
 
 client = MongoClient('mongodb://localhost:27017/tutela_db')
 db = client.get_default_database()
@@ -118,5 +119,48 @@ def get_website(item):
 
     return True
 
+def make_pipeline():
+    sentencias_fields = ['providencia', 'ano', 'fecha sentencia', 'fecha publicada', 'expediente', 'url']
 
-update_texto()
+    keyword = "T-001"
+    sortColumn = 3
+    dir = 'asc'
+    start = 0
+    length = 10
+    pipeline = []
+    match_keyword = ''
+    if keyword != '':
+        for field in sentencias_fields:
+            match_keyword = match_keyword + '{"' + field + '": {"$regex": "' + keyword + '","$options": "i"}},'
+        match_keyword = match_keyword[:-1]
+        or_string = '{"$or":[' + match_keyword + ']}'
+        recordsFiltered = db['sentencias'].count_documents(json.loads(or_string))
+        match_string = '{"$match":{"$or":[' + match_keyword + ']}}'
+        pipeline.append(json.loads(match_string))
+
+    sort_string = '{"$sort": {"' + sentencias_fields[sortColumn-1] + '":'  + str(1 if dir == 'asc' else -1) + '}}'
+    pipeline.append(json.loads(sort_string))
+
+
+
+    skip_string = '{"$skip": ' + str(start) + '}'
+    pipeline.append(json.loads(skip_string))
+    length_string =  '{"$limit": ' + str(length) + '}'
+    pipeline.append(json.loads(length_string))
+
+    project_string = ''
+    for field in sentencias_fields:
+        project_string = project_string + '"' + field + '": 1,'
+    project_string = project_string[:-1]
+    project_string = '{"$project":{' + project_string + '}}'
+    pipeline.append(json.loads(project_string))
+
+    # print(pipeline)
+
+    filter_list = list(db['sentencias'].aggregate(pipeline))
+
+    recordsTotal = db['sentencias'].count_documents({})
+
+    print(recordsTotal)
+    print(recordsFiltered)
+# update_texto()

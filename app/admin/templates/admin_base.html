@@ -209,6 +209,10 @@
             <a href="/admin/constdf/" aria-expanded="false"><i class="icon icon-single-04"></i><span
                 class="nav-text">Constitución</span></a>
           </li>
+          <li>
+            <a href="/admin/sentencias/" aria-expanded="false"><i class="icon icon-single-04"></i><span
+                class="nav-text">Sentencia</span></a>
+          </li>
 
 
 
@@ -242,7 +246,18 @@
     <!--**********************************
             Content body start
         ***********************************-->
-    <div class="content-body">{% block content %} {% endblock %}</div>
+    <div class="content-body">
+      <div id="body_preloader">
+        <div class="sk-three-bounce">
+          <div class="sk-child sk-bounce1"></div>
+          <div class="sk-child sk-bounce2"></div>
+          <div class="sk-child sk-bounce3"></div>
+        </div>
+      </div>
+      <!--*******************
+              Preloader end
+          ********************-->{% block content %} {% endblock %}
+    </div>
     <!--**********************************
             Content body end
         ***********************************-->
