@@ -1,4 +1,4 @@
-from flask import jsonify, request, send_file, send_from_directory, abort
+from flask import jsonify, request, send_file, send_from_directory, abort, session, redirect, url_for
 from datetime import datetime
 import time
 import os
@@ -9,6 +9,7 @@ from . import user_api_bp
 from .script import openAI_response
 from .utils import find_in_csv, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia
 from .models import get_users
+from app.user.users_routes import user_login_required
 
 load_dotenv()
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
@@ -24,6 +25,8 @@ analysis_start_time = time.time() - STAY_TIME
 
 @user_api_bp.route('/pdf/<path:filename>')
 def pdf_serve_static(filename):
+    if 'user_info' not in session:
+        abort(401)
     if '..' in filename or filename.startswith('/'):
         abort(400)
 
@@ -36,6 +39,8 @@ def pdf_serve_static(filename):
 
 @user_api_bp.route('/save_resultados', methods=['POST'])
 def save_resultados():
+    if 'user_info' not in session:
+        abort(401)
     content = request.form.get('content')
     create_docx_from_html(content, 'output.docx')
     return send_file('output.docx', as_attachment=True, download_name='output.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -43,6 +48,8 @@ def save_resultados():
 
 @user_api_bp.route('/reset', methods=['POST'])
 def reset():
+    if 'user_info' not in session:
+        abort(401)
     if request.method == 'POST':
         global file_path
         global sentence_result
@@ -60,6 +67,8 @@ def reset():
 
 @user_api_bp.route('/uploadfile', methods=['POST'])
 def uploadfile():
+    if 'user_info' not in session:
+        abort(401)
     if request.method == 'POST':
         if 'pdf_file' not in request.files:
             return jsonify("no file"), 400
@@ -93,6 +102,8 @@ def uploadfile():
 
 @user_api_bp.route('/analysis_pdf', methods=['POST'])
 def analysis_pdf():
+    if 'user_info' not in session:
+        return redirect(url_for('user.users.login_page'))
     if request.method == 'POST':
         global analysis_start_time
         during_time = time.time() - analysis_start_time

@@ -19,7 +19,6 @@ def constdf_get(current_user):
         length = request.form.get('length')
         sortColumn = request.form.get('order[0][column]')
         dir = request.form.get('order[0][dir]')
-        print(sortColumn)
         return get_const(keyword, int(start), int(length), int(sortColumn), dir)
 
 @constdf_bp.route('/save', methods=['POST'])

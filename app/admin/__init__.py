@@ -11,5 +11,4 @@ admin_bp.register_blueprint(constdf_bp)
 admin_bp.register_blueprint(sentencias_bp)
 
 def page_not_found(e):
-    print("here")
     return render_template('404.html'), 404

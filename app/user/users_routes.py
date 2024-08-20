@@ -1,4 +1,4 @@
-from flask import render_template, Blueprint, current_app, request, redirect, url_for, make_response, jsonify
+from flask import render_template, Blueprint, current_app, request, redirect, url_for, make_response, jsonify, session
 import jwt
 import datetime
 from functools import wraps
@@ -9,7 +9,7 @@ users_bp = Blueprint('users', __name__)
 def create_user_token(email):
     return jwt.encode({
         'email': email,
-        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)
+        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=10)
     }, current_app.config['FLASK_SECRET_KEY'], algorithm="HS256")
 
 def user_login_required(f):
@@ -31,33 +31,43 @@ def user_login_required(f):
         new_token = create_user_token(email)
         response = make_response(f(current_user, *args, **kwargs))
         response.set_cookie('user_token', new_token, httponly=True)
+        session['user_info'] = current_user['email']
         return response
     return decorated
 
 @users_bp.route('/')
 def home():
     token = request.cookies.get('user_token')
-    print(token)
     if not token:
         current_user = {}
     else:
-        data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
-        email = data['email']
-        db = get_db()
-        users_collection = db['users']
-        current_user = users_collection.find_one({'email': email, 'type': 'user'})
+        try:
+            data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
+            email = data['email']
+            db = get_db()
+            users_collection = db['users']
+            current_user = users_collection.find_one({'email': email, 'type': 'user'})
+        except Exception as e:
+            current_user = {}
     return render_template('landing.html', user=current_user)
 
 @users_bp.route('/login')
 def login_page():
     token = request.cookies.get('user_token')
     if token:
-        data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
-        db = get_db()
-        users_collection = db['users']
-        current_user = users_collection.find_one({'email': data['email'], 'type': 'user'})
-        if current_user:
-            return redirect(url_for('user.users.home'))
+        try:
+            data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
+            db = get_db()
+            users_collection = db['users']
+            current_user = users_collection.find_one({'email': data['email'], 'type': 'user'})
+
+            if current_user:
+                session['user_info'] = current_user['email']
+                return redirect(url_for('user.users.home'))
+            else:
+                raise Exception("User not found")
+        except Exception as e:
+            return render_template('user_login.html')
     return render_template('user_login.html')
 
 @users_bp.route('login/users', methods=['POST'])
@@ -84,4 +94,5 @@ def login_user():
 def logout_user():
     response = make_response(redirect(url_for('user.users.login_page')))
     response.delete_cookie('user_token')
+    session.pop('user_info', None)
     return response
