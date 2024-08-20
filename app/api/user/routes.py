@@ -26,9 +26,9 @@ analysis_start_time = time.time() - STAY_TIME
 @user_api_bp.route('/pdf/<path:filename>')
 def pdf_serve_static(filename):
     if 'user_info' not in session:
-        abort(401)
+        return jsonify("no user"), 401
     if '..' in filename or filename.startswith('/'):
-        abort(400)
+        return abort(400)
 
     uploads_dir = 'uploads'
     safe_path = os.path.join(UPLOAD_FOLDER,filename)
@@ -40,7 +40,7 @@ def pdf_serve_static(filename):
 @user_api_bp.route('/save_resultados', methods=['POST'])
 def save_resultados():
     if 'user_info' not in session:
-        abort(401)
+        return jsonify("no user"), 401
     content = request.form.get('content')
     create_docx_from_html(content, 'output.docx')
     return send_file('output.docx', as_attachment=True, download_name='output.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -49,7 +49,7 @@ def save_resultados():
 @user_api_bp.route('/reset', methods=['POST'])
 def reset():
     if 'user_info' not in session:
-        abort(401)
+        return jsonify("no user"), 401
     if request.method == 'POST':
         global file_path
         global sentence_result
@@ -68,7 +68,7 @@ def reset():
 @user_api_bp.route('/uploadfile', methods=['POST'])
 def uploadfile():
     if 'user_info' not in session:
-        abort(401)
+        return jsonify("no user"), 401
     if request.method == 'POST':
         if 'pdf_file' not in request.files:
             return jsonify("no file"), 400
@@ -103,7 +103,7 @@ def uploadfile():
 @user_api_bp.route('/analysis_pdf', methods=['POST'])
 def analysis_pdf():
     if 'user_info' not in session:
-        return redirect(url_for('user.users.login_page'))
+        return jsonify("no user"), 401
     if request.method == 'POST':
         global analysis_start_time
         during_time = time.time() - analysis_start_time
@@ -123,6 +123,8 @@ def analysis_pdf():
     
 @user_api_bp.route('/analysis_judgement', methods=['POST'])
 def analysis_judgement():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
     if request.method == 'POST':
 
         sentencia_list = get_sentencia(pdf_content, articulo_result)
@@ -138,6 +140,8 @@ def analysis_judgement():
 
 @user_api_bp.route('/analysis_constitucion', methods=['POST'])
 def analysis_constitucion():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
     if request.method == 'POST':
         global articulo_result
 
@@ -167,6 +171,8 @@ def analysis_constitucion():
 
 @user_api_bp.route('/analysis_resultados', methods=['POST'])
 def analysis_resultados():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
     if request.method == 'POST':
         
         global analysis_start_time
@@ -202,6 +208,8 @@ def analysis_resultados():
     
 @user_api_bp.route('/users/get', methods=['POST'])
 def users_get():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
     result_data = get_users()
     response = {
         'message': result_data
