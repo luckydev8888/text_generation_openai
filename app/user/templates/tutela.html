@@ -1,25 +1,8 @@
-{% extends "base.html" %}
+{% extends "user_base.html" %}
 
 {% block title %}TextAnalizer Tutelas{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section id="home" class="hero section">
-    <div class="container">
-        <div class="row gy-4">
-            <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-                <h1>Consulta Con TextAnalizer Tutelas</h1>
-                <p>The law aims to ensure fairness and justice within the legal system</p>
-                <div class="d-flex">
-                    <a href="/" class="btn-get-started">Empezar</a>
-                </div>
-            </div>
-            <div class="col-lg-6 order-1 order-lg-2 hero-img">
-                <img src="{{url_for('user.static', filename='assets/img/hero-img.png')}}" class="img-fluid animated" alt="">
-            </div>
-        </div>
-    </div>
-</section><!-- /Hero Section -->
 
 <!-- About Section -->
 <section id="tutela" class="about section tutela-section">
@@ -34,17 +17,18 @@
             <div class="content col-xl-4 d-flex flex-column" data-aos="fade-up" data-aos-delay="100">
                 <div id="tutela_info_form">
                     <div class="mb-5">
-                        <form id="file_upload_form" method="POST"  enctype=multipart/form-data>
+                        <form id="file_upload_form" method="POST" enctype=multipart/form-data>
                             <label for="pdf_file" class="form-label">Cargue archivo Tutela en .PDF</label>
                             <input class="form-control" type="file" id="pdf_file" name="pdf_file">
                         </form>
                     </div>
                     <button id="analysis" type="button" class="btn btn-primary mb-3">Analizar</button>
                     <button id="reset" type="button" class="btn btn-danger mb-3">Reset</button>
-                </div>            
+                </div>
             </div>
             <div class="col-xl-8" data-aos="fade-up" data-aos-delay="200">
-                <div class="row gy-4" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; height: 800px; margin-left: 30px;">
+                <div class="row gy-4"
+                    style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; height: 800px; margin-left: 30px;">
                     <div id="pdf_viewer">
                         <iframe id="hole_pdf_viewer" height="100%" width=100%></iframe>
                     </div>
@@ -64,7 +48,8 @@
     </div><!-- End Section Title -->
     <div class="container summary-body">
         <div class="col-xl-12" data-aos="fade-up" data-aos-delay="200">
-            <div class="row gy-4" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; max-height: 600px; margin-left: 30px;">
+            <div class="row gy-4"
+                style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; max-height: 600px; margin-left: 30px;">
                 <div id="summary_text"></div>
             </div>
         </div>
@@ -129,4 +114,8 @@
     </div>
     <div id="resultados_preloader" class="sub preloader"></div>
 </section><!-- /Resultados Section -->
+{% endblock %}
+
+{% block jsContent %}
+<script src="{{ url_for('user.static', filename='assets/js/script.js') }}"></script>
 {% endblock %}

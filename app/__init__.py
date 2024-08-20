@@ -1,15 +1,24 @@
 from flask import Flask,jsonify
+import datetime
+
 from .api.user import user_api_bp
 from .admin import admin_bp
 from .user import user_bp
 from .mongo import get_db, jwt
 from .config import Config
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    jwt.init_app(app)
+    app.secret_key = os.getenv('APP_SECRET_KEY')
 
+    jwt.init_app(app)
+    
     # Register blueprints
     app.register_blueprint(user_api_bp, url_prefix='/api')
     app.register_blueprint(admin_bp, url_prefix='/admin')
