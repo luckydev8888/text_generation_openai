@@ -49,10 +49,10 @@ def sentencia_from_csv():
                 'providencia': row['providencia'],
                 'tipo': row['tipo'],
                 'ano': row['ano'],
-                'fecha sentencia': row['fecha sentencia'],
+                'fecha_sentencia': row['fecha sentencia'],
                 'tema': row['tema'],
                 'magistrado': row['magistrado'],
-                'fecha publicada': row['fecha publicada'],
+                'fecha_publicada': row['fecha publicada'],
                 'expediente': row['expediente'],
                 'url': row['url'],
                 'texto': "",
@@ -69,14 +69,14 @@ def update_texto():
     for x in sentencia_collection.find():
         if 'uploaded' in x and x['uploaded'] == True:
             continue
-        file_path = f'../{x['providencia']}.txt'
+        file_path = f'../site_output/{x['providencia']}.txt'
         if os.path.isfile(file_path):
             doc = open(file_path, "r", encoding='utf-8')
             texto = doc.read()
             myquery = { "_id": x['_id'] }
             newvalues = { "$set": { "texto": texto, "uploaded": True} }
             sentencia_collection.update_one(myquery, newvalues)
-            print(f'{x['providencia']} success')
+            # print(f'{x['providencia']} success')
         else:
             myquery = { "_id": x['_id'] }
             newvalues = { "$set": {"uploaded": False} }
@@ -164,3 +164,6 @@ def make_pipeline():
     print(recordsTotal)
     print(recordsFiltered)
 # update_texto()
+
+
+update_texto()

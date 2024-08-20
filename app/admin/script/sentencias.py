@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import re
 import requests
 
-sentencias_fields = ['providencia', 'ano', 'fecha sentencia', 'fecha publicada', 'expediente', 'url']
+sentencias_fields = ['providencia', 'ano', 'fecha_sentencia', 'fecha_publicada', 'expediente', 'url']
 
 collenctionName = 'sentencias'
 
@@ -58,8 +58,8 @@ def get_sentencias(keyword, start, length, sortColumn, dir):
                 '_id': str(each['_id']),
                 'providencia': str(each['providencia']),
                 'ano': str(each['ano']),
-                'fecha_sentencia': str(each['fecha sentencia']),
-                'fecha_publicada': str(each['fecha publicada']),
+                'fecha_sentencia': str(each['fecha_sentencia']),
+                'fecha_publicada': str(each['fecha_publicada']),
                 'expediente': str(each['expediente']),
                 'url': str(each['url']),
             })
@@ -87,10 +87,10 @@ def get_sentencia(id):
         "providencia": str(get_data["providencia"]),
         "tipo": str(get_data["tipo"]),
         "ano": str(get_data["ano"]),
-        "fecha_sentencia": str(get_data["fecha sentencia"]),
+        "fecha_sentencia": str(get_data["fecha_sentencia"]),
         "tema": str(get_data["tema"]),
         "magistrado": str(get_data["magistrado"]),
-        "fecha_publicada": str(get_data["fecha publicada"]),
+        "fecha_publicada": str(get_data["fecha_publicada"]),
         "expediente":str(get_data["expediente"]),
         "url": str(get_data["url"]),
         "texto": str(get_data["texto"])
@@ -108,10 +108,10 @@ def save_sentencias(save_data):
                 "providencia": save_data["providencia"],
                 "tipo": save_data["tipo"],
                 "ano": save_data["ano"],
-                "fecha sentencia":save_data["fecha_sentencia"],
+                "fecha_sentencia":save_data["fecha_sentencia"],
                 "tema":save_data["tema"],
                 "magistrado":save_data["magistrado"],
-                "fecha publicada": save_data["fecha_publicada"],
+                "fecha_publicada": save_data["fecha_publicada"],
                 "expediente":save_data["expediente"],
                 "url": save_data["url"],
                 "texto": save_data["texto"]
@@ -127,10 +127,10 @@ def save_sentencias(save_data):
                     "providencia": save_data["providencia"],
                     "tipo": save_data["tipo"],
                     "ano": save_data["ano"],
-                    "fecha sentencia":save_data["fecha_sentencia"],
+                    "fecha_sentencia":save_data["fecha_sentencia"],
                     "tema":save_data["tema"],
                     "magistrado":save_data["magistrado"],
-                    "fecha publicada": save_data["fecha_publicada"],
+                    "fecha_publicada": save_data["fecha_publicada"],
                     "expediente":save_data["expediente"],
                     "url": save_data["url"],
                     "texto": save_data["texto"]
@@ -141,24 +141,6 @@ def save_sentencias(save_data):
         except:
             return jsonify({'message': 'Error occur'}), 500
 
-
-def update_sentencias(id, type, number, texto, tutela):
-    db = get_db()
-    collection = db[collenctionName]
-    try:
-        query_filter = {'_id' : ObjectId(id)}
-        update_operation = { '$set' : 
-            { 
-                'articulo': type,
-                'num': int(number),
-                'texto': texto,
-                'tutela': tutela
-            }
-        }
-        collection.update_one(query_filter, update_operation)
-        return jsonify({'message': 'Successfully update'}), 200
-    except :
-        return jsonify({'message': 'Error occur'}), 500
 
 def delete_sentencias(id):
     db = get_db()
