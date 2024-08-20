@@ -1,4 +1,4 @@
-from flask import Flask,jsonify
+from flask import Flask,jsonify, render_template
 import datetime
 
 from .api.user import user_api_bp
@@ -6,6 +6,7 @@ from .admin import admin_bp
 from .user import user_bp
 from .mongo import get_db, jwt
 from .config import Config
+from .admin import page_not_found
 
 import os
 from dotenv import load_dotenv
@@ -23,6 +24,8 @@ def create_app():
     app.register_blueprint(user_api_bp, url_prefix='/api')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(user_bp, url_prefix='/')
+
+    app.register_error_handler(404, page_not_found)
     
     app.teardown_appcontext(lambda ctx: get_db().client.close())
 

@@ -63,7 +63,6 @@ def login_page():
 @users_bp.route('login/users', methods=['POST'])
 def login_user():
     if request.method == 'POST':
-        print("here")
         email = request.form.get('email')
         pwd = request.form.get('pwd')
         db = get_db()
@@ -83,7 +82,6 @@ def login_user():
     
 @users_bp.route('logout', methods=['GET', 'POST'])
 def logout_user():
-    print("here")
     response = make_response(redirect(url_for('user.users.login_page')))
     response.delete_cookie('user_token')
     return response
