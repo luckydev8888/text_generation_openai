@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from . import user_api_bp
 from .script import openAI_response
-from .utils import find_in_csv, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia
+from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia
 from .models import get_users
 from app.user.users_routes import user_login_required
 
@@ -42,7 +42,7 @@ def save_resultados():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     content = request.form.get('content')
-    create_docx_from_html(content, 'output.docx')
+    create_docx_from_html(content, 'app/output.docx')
     return send_file('output.docx', as_attachment=True, download_name='output.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 
@@ -128,9 +128,11 @@ def analysis_judgement():
     if request.method == 'POST':
 
         sentencia_list = get_sentencia(pdf_content, articulo_result)
+
+        print(sentencia_list)
         global sentence_result
 
-        sentence_result = find_in_csv(sentencia_list)
+        sentence_result = find_setencia_list(sentencia_list)
 
         response = {
             'message': sentence_result

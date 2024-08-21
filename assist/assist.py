@@ -168,21 +168,43 @@ def make_pipeline():
 def get_sentencia():
     constitution_list = [20,30,26,35]
     collection = db['sentencias']
-    result = []
-    pipeline = [{"$project": {"_id": 1, "providencia": 1, "fecha sentencia": 1}},
-                {"$sort": {"fecha sentencia" : -1}},
+    pipeline = [{"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1}},
+                {"$sort": {"fecha_sentencia" : -1}},
     ]
-    sentencia_list = list(collection.aggregate(pipeline=pipeline))
+    sentencia_list = []
+    
+    sentencias_list = list(collection.aggregate(pipeline=pipeline))
     for each in constitution_list:
         num = 0
-        for item in sentencia_list:
+        for item in sentencias_list:
             doc = collection.find_one({"_id": item['_id']})
             if fr"artículo {each}" in doc['texto']:
-                result.append(doc['providencia'])
+                sentencia_list.append(doc['providencia'])
                 num += 1
             if num == 3: break
+    sentencia_list = list(set(sentencia_list))
+    print(sentencia_list)
 
-    print(result)
+def find_setencia_list(list):
+    collection = db['sentencias']
 
+    json_data = []
+    for item in list:
+        doc = collection.find_one({"providencia": item})
+        json_data.append({
+            'providencia': doc['providencia'],
+            'tipo': doc['tipo'],
+            'ano': doc['ano'],
+            'fecha_sentencia': doc['fecha_sentencia'],
+            'tema': doc['tema'],
+            'magistrado': doc['magistrado'],
+            'fecha_publicada': doc['fecha_publicada'],
+            'expediente': doc['expediente'],
+            'url': doc['url'],
+        })
+    print(json_data)
+    return json_data
 
-get_sentencia()
+list = ['T-243-24', 'T-245-24', 'T-232-24', 'A-1043-24', 'A-979-24', 'T-248-24', 'T-244-24', 'T-216-24']
+
+find_setencia_list(list)

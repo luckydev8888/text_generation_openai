@@ -4,7 +4,8 @@ from docx import Document
 import re
 import PyPDF2
 import os
-from datetime import datetime 
+from datetime import datetime
+from app.mongo import get_db
 
 
 def get_pdf_text(pdf_path):
@@ -20,15 +21,25 @@ def clean_text(str):
     return re.sub(cite_pattern, '', str)
 
 
-def find_in_csv(list):
-    csv_file_path = './data/SenTencias.csv'
-    json_data = []
-    with open(csv_file_path, mode='r', newline='', encoding='utf-8') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            if row['providencia'] in list:
-                json_data.append(row)
+def find_setencia_list(list):
+    db = get_db()
+    collection = db['sentencias']
 
+    json_data = []
+    for item in list:
+        doc = collection.find_one({"providencia": item})
+        if doc :
+            json_data.append({
+                'providencia': doc['providencia'],
+                'tipo': doc['tipo'],
+                'ano': doc['ano'],
+                'fecha_sentencia': doc['fecha_sentencia'],
+                'tema': doc['tema'],
+                'magistrado': doc['magistrado'],
+                'fecha_publicada': doc['fecha_publicada'],
+                'expediente': doc['expediente'],
+                'url': doc['url'],
+            })
     return json_data
 
 
@@ -77,31 +88,21 @@ def get_sentencia(str, constitution_list):
 
     else:
         # constitution_list = [20, 30]
-        csv_file_path = './data/SenTencias.csv'
-        folder_name = './data/site_output'
-
-        with open(csv_file_path, mode='r', newline='', encoding='utf-8') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            recent_data_sorted = sorted(csv_reader, key=lambda x: parse_date(x['fecha sentencia']), reverse=True)
-            for entry in constitution_list:
-                pattern = fr"artículo\s+{entry}"
-                cnt = 0
-                for row in recent_data_sorted:
-                    file_name = f"{row['providencia']}.txt"
-                    file_path = os.path.join(folder_name, file_name)
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as file:
-                            content = file.read()
-                            content = content.lower()
-                            if re.search(pattern, content, re.IGNORECASE):
-                                sentencia_list.append(row['providencia'])
-                                cnt = cnt + 1
-                                if cnt == 3: break
-                            
-                    except FileNotFoundError:
-                        print(f"The file {file_name} was not found in the folder {folder_name}.")
-                    except IOError as e:
-                        print(f"An error occurred while reading the file: {e}")
+        db = get_db()
+        collection = db['sentencias']
+        pipeline = [{"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1}},
+                    {"$sort": {"fecha_sentencia" : -1}},
+        ]
+        sentencias_list = list(collection.aggregate(pipeline=pipeline))
+        for each in constitution_list:
+            num = 0
+            for item in sentencias_list:
+                doc = collection.find_one({"_id": item['_id']})
+                if fr"artículo {each}" in doc['texto']:
+                    sentencia_list.append(doc['providencia'])
+                    num += 1
+                if num == 3: break
+        sentencia_list = list(set(sentencia_list))
     print(sentencia_list)
     return sentencia_list
 
