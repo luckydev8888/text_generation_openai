@@ -26,11 +26,10 @@ def create_app():
     app.register_blueprint(user_bp, url_prefix='/')
 
     app.register_error_handler(404, page_not_found)
-    app.register_error_handler(401, page_not_found)
     
     app.teardown_appcontext(lambda ctx: get_db().client.close())
 
-    app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(seconds=10)
+    app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(hours=8)
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_headers, jwt_data):

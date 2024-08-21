@@ -165,5 +165,24 @@ def make_pipeline():
     print(recordsFiltered)
 # update_texto()
 
+def get_sentencia():
+    constitution_list = [20,30,26,35]
+    collection = db['sentencias']
+    result = []
+    pipeline = [{"$project": {"_id": 1, "providencia": 1, "fecha sentencia": 1}},
+                {"$sort": {"fecha sentencia" : -1}},
+    ]
+    sentencia_list = list(collection.aggregate(pipeline=pipeline))
+    for each in constitution_list:
+        num = 0
+        for item in sentencia_list:
+            doc = collection.find_one({"_id": item['_id']})
+            if fr"artículo {each}" in doc['texto']:
+                result.append(doc['providencia'])
+                num += 1
+            if num == 3: break
 
-update_texto()
+    print(result)
+
+
+get_sentencia()

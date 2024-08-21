@@ -9,7 +9,7 @@ users_bp = Blueprint('users', __name__)
 def create_user_token(email):
     return jwt.encode({
         'email': email,
-        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=10)
+        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=8)
     }, current_app.config['FLASK_SECRET_KEY'], algorithm="HS256")
 
 def user_login_required(f):

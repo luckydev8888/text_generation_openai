@@ -519,6 +519,13 @@ h6 {
   position: absolute;
 }
 
+.preloader.sub .tutela_stopbtn {
+  top: calc(50% - 20px);
+  left: calc(50% - 40px);
+  position: absolute;
+  width: 80px;
+}
+
 @keyframes animate-preloader {
   0% {
     transform: rotate(0deg);
@@ -1726,4 +1733,25 @@ section,
 
 .tutela-section {
   position: relative;
+}
+
+.reload-btn-panel {
+  position: relative
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.icon-button:hover {
+  color: #007bff;
+}
+
+.reload-button {
+  position: absolute;
+  right: 5px;
+  top: -40px;
 }

@@ -31,7 +31,7 @@ google = oauth.register(
 def create_token(email):
     return jwt.encode({
         'email': email,
-        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)
+        'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=8)
     }, current_app.config['FLASK_SECRET_KEY'], algorithm="HS256")
 
 def login_required(f):

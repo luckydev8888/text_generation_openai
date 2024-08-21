@@ -47,6 +47,9 @@
         <p>Resumen</p>
     </div><!-- End Section Title -->
     <div class="container summary-body">
+        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+            <button class="icon-button reload-button" id="summary_reload"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
         <div class="col-xl-12" data-aos="fade-up" data-aos-delay="200">
             <div class="row gy-4"
                 style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; max-height: 600px; margin-left: 30px;">
@@ -54,7 +57,9 @@
             </div>
         </div>
     </div>
-    <div id="summary_preloader" class="sub preloader"></div>
+    <div id="summary_preloader" class="sub preloader">
+        <button type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    </div>
 </section><!-- /Resumen Section -->
 
 <!-- Constitucion Section -->
@@ -65,11 +70,17 @@
         <p>Constitucion</p>
     </div><!-- End Section Title -->
     <div class="container">
+        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+            <button class="icon-button reload-button" id="constitucion_reload"><i
+                    class="bi bi-arrow-clockwise"></i></button>
+        </div>
         <div class="row gy-4">
             <div id="constitucion_content"></div>
         </div>
     </div>
-    <div id="constitucion_preloader" class="sub preloader"></div>
+    <div id="constitucion_preloader" class="sub preloader">
+        <button type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    </div>
 </section><!-- /Constitucion Section -->
 
 <!-- Sentencias Corte Section -->
@@ -80,6 +91,10 @@
         <p>Sentencias Corte</p>
     </div><!-- End Section Title -->
     <div class="container">
+        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+            <button class="icon-button reload-button" id="judgement_reload"><i
+                    class="bi bi-arrow-clockwise"></i></button>
+        </div>
         <table id="judgement_table" class="table table-hover">
             <thead>
                 <tr>
@@ -98,7 +113,9 @@
             </tbody>
         </table>
     </div>
-    <div id="judgement_preloader" class="sub preloader"></div>
+    <div id="judgement_preloader" class="sub preloader">
+        <button id="" type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    </div>
 </section><!-- /Sentencias Corte Section -->
 
 <!-- Resultados Section -->
@@ -109,10 +126,15 @@
         <p>Resultados</p>
     </div><!-- End Section Title -->
     <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+            <button class="icon-button reload-button" id="resultados_reload"><i
+                    class="bi bi-arrow-clockwise"></i></button>
+        </div>
         <div id="resultados_summernote"></div>
         <button id="resultados_save" type="button" class="btn btn-primary mb-5 mt-4">Save</button>
     </div>
-    <div id="resultados_preloader" class="sub preloader"></div>
+    <div id="resultados_preloader" class="sub preloader"><button type="button"
+            class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button></div>
 </section><!-- /Resultados Section -->
 {% endblock %}
 

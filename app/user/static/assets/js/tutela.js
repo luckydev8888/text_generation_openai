@@ -1,13 +1,18 @@
 $(document).ready(function () {
+  // Definition
   let is_upload
+  let is_stopped
   var res_summer_element = document.getElementById('resultados_summernote')
   // res_summer_element.summernote({
   //     tabsize: 2,
   //     height: 100
   // });
 
+  // Init variation
+
   function init () {
     is_upload = false
+    is_stopped = false
     $('#resultados_save').prop('disabled', true)
     $('.preloader.sub').hide()
     $('#hole_pdf_viewer').attr('src', '')
@@ -16,11 +21,9 @@ $(document).ready(function () {
     $('#constitucion_content')[0].innerHTML = ''
     $('#resultados_summernote')[0].innerHTML = ''
     $('#pdf_file')[0].value = ''
-    $('#resumen').hide()
-    $('#sentencias').hide()
-    $('#constitucion').hide()
-    $('#resultados').hide()
   }
+
+  // Ajax Function Group
 
   function ajax_reset () {
     return $.ajax({
@@ -76,7 +79,7 @@ $(document).ready(function () {
     })
   }
 
-  function ajax_summary () {
+  function ajax_summary (is_reload) {
     return $.ajax({
       type: 'POST',
       url: '/api/analysis_pdf',
@@ -85,16 +88,9 @@ $(document).ready(function () {
         console.log(response)
         $('#summary_text')[0].innerHTML = marked.parse(response.message)
       },
-      error: function (xhr, status, error) {
-        // Handle errors
-        console.error('Error occur:', status, error)
-      },
+      error: function (xhr, status, error) {},
       beforeSend: function () {
-        $('#resumen').show()
         $('#summary_preloader').show()
-        $('#judgement_preloader').show()
-        $('#constitucion_preloader').show()
-        $('#resultados_preloader').show()
       },
       statusCode: {
         401: function () {
@@ -103,14 +99,25 @@ $(document).ready(function () {
       }
     })
       .done(function (response) {
-        // return ajax_constitucion();
+        if (is_reload) return
+        else return ajax_constitucion(false)
       })
       .fail(function (xhr, status, error) {
-        return ajax_summary()
+        if (is_stopped) {
+          $('#summary_preloader').hide()
+          $('.tutela_stopbtn').text('Stop')
+          $('.tutela_stopbtn').prop('disabled', false)
+          is_stopped = false
+          return
+        } else {
+          setTimeout(() => {
+            return ajax_summary()
+          }, 10000)
+        }
       })
   }
 
-  function ajax_judgement () {
+  function ajax_judgement (is_reload) {
     return $.ajax({
       type: 'POST',
       url: '/api/analysis_judgement',
@@ -140,7 +147,7 @@ $(document).ready(function () {
         console.error('Error occur:', status, error)
       },
       beforeSend: function () {
-        $('#sentencias').show()
+        $('#judgement_preloader').show()
       },
       statusCode: {
         401: function () {
@@ -149,14 +156,25 @@ $(document).ready(function () {
       }
     })
       .done(function (response) {
+        if (is_reload) return
         return ajax_resultados()
       })
       .fail(function () {
-        return ajax_judgement()
+        if (is_stopped) {
+          $('#judgement_preloader').hide()
+          $('.tutela_stopbtn').text('Stop')
+          $('.tutela_stopbtn').prop('disabled', false)
+          is_stopped = false
+          return
+        } else {
+          setTimeout(() => {
+            return ajax_judgement()
+          }, 10000)
+        }
       })
   }
 
-  function ajax_constitucion () {
+  function ajax_constitucion (is_reload) {
     return $.ajax({
       type: 'POST',
       url: '/api/analysis_constitucion',
@@ -165,12 +183,12 @@ $(document).ready(function () {
         console.log(response)
         $('#constitucion_content')[0].innerHTML = marked.parse(response.message)
       },
+      beforeSend: function () {
+        $('#constitucion_preloader').show()
+      },
       error: function (xhr, status, error) {
         // Handle errors
         console.error('Error occur:', status, error)
-      },
-      beforeSend: function () {
-        $('#constitucion').show()
       },
       statusCode: {
         401: function () {
@@ -179,14 +197,25 @@ $(document).ready(function () {
       }
     })
       .done(function (response) {
-        return ajax_judgement()
+        if (is_reload) return
+        return ajax_judgement(false)
       })
       .fail(function () {
-        return ajax_constitucion()
+        if (is_stopped) {
+          $('#constitucion_preloader').hide()
+          $('.tutela_stopbtn').text('Stop')
+          $('.tutela_stopbtn').prop('disabled', false)
+          is_stopped = false
+          return
+        } else {
+          setTimeout(() => {
+            return ajax_constitucion()
+          }, 10000)
+        }
       })
   }
 
-  function ajax_resultados () {
+  function ajax_resultados (is_reload) {
     return $.ajax({
       type: 'POST',
       url: '/api/analysis_resultados',
@@ -205,7 +234,7 @@ $(document).ready(function () {
         console.error('Error occur:', status, error)
       },
       beforeSend: function () {
-        $('#resultados').show()
+        $('#resultados_preloader').show()
       },
       statusCode: {
         401: function () {
@@ -213,9 +242,21 @@ $(document).ready(function () {
         }
       }
     }).fail(function () {
-      return ajax_resultados()
+      if (is_stopped) {
+        $('#resultados_preloader').hide()
+        $('.tutela_stopbtn').text('Stop')
+        $('.tutela_stopbtn').prop('disabled', false)
+        is_stopped = false
+        return
+      } else {
+        setTimeout(() => {
+          return ajax_resultados()
+        }, 10000)
+      }
     })
   }
+
+  // Button Group
 
   $('#reset').on('click', function (event) {
     ajax_reset().done(function () {
@@ -232,11 +273,41 @@ $(document).ready(function () {
     if (is_upload) {
       $('#analysis').prop('disabled', true)
       $('#reset').prop('disabled', true)
-      ajax_summary()
+      ajax_summary(false)
     } else {
       alert('Select the PDF file')
     }
   })
+
+  // Stop buttons
+
+  $('.tutela_stopbtn').on('click', function (event) {
+    event.preventDefault()
+
+    is_stopped = true
+    $(this).text('Stoping')
+    $(this).prop('disabled', true)
+  })
+
+  // Reload buttons
+
+  $('#summary_reload').on('click', function (event) {
+    ajax_summary(true)
+  })
+
+  $('#judgement_reload').on('click', function (event) {
+    ajax_judgement(true)
+  })
+
+  $('#constitucion_reload').on('click', function (event) {
+    ajax_constitucion(true)
+  })
+
+  $('#resultados_reload').on('click', function (event) {
+    ajax_resultados(true)
+  })
+
+  // Save button
 
   $('#resultados_save').on('click', function (event) {
     content = $('#resultados_summernote')[0].innerHTML
@@ -253,8 +324,7 @@ $(document).ready(function () {
       .then(response => {
         if (response.status === 401) {
           window.location.href = '/login'
-        }
-        response.blob()
+        } else response.blob()
       })
       .then(blob => {
         const url = window.URL.createObjectURL(blob)
