@@ -2,9 +2,12 @@ from flask import render_template, Blueprint, current_app, request, redirect, ur
 import jwt
 import datetime
 from functools import wraps
+from flask_bcrypt import Bcrypt
 from app.mongo import get_db
 
+
 users_bp = Blueprint('users', __name__)
+
 
 def create_user_token(email):
     return jwt.encode({
@@ -73,14 +76,15 @@ def login_page():
 @users_bp.route('login/users', methods=['POST'])
 def login_user():
     if request.method == 'POST':
+        bcrypt = Bcrypt(current_app)
         email = request.form.get('email')
         pwd = request.form.get('pwd')
         db = get_db()
         users_collection = db['users']
 
         user = users_collection.find_one({'email': email, 'type': 'user'})
-        # if not user or not check_password_hash(user['password'], password):
-        #     return jsonify({'message': 'Invalid username or password!'}), 401
+        if not user or not bcrypt.check_password_hash(user['pwd'], pwd):
+            return jsonify({'message': 'Invalid username or password!'}), 401
         token = jwt.encode({
                 'email': email,
                 'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)

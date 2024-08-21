@@ -5,6 +5,8 @@ import re
 from bs4 import BeautifulSoup
 import requests
 import json
+from flask_bcrypt import Bcrypt
+from flask import Flask
 
 client = MongoClient('mongodb://localhost:27017/tutela_db')
 db = client.get_default_database()
@@ -205,6 +207,14 @@ def find_setencia_list(list):
     print(json_data)
     return json_data
 
-list = ['T-243-24', 'T-245-24', 'T-232-24', 'A-1043-24', 'A-979-24', 'T-248-24', 'T-244-24', 'T-216-24']
+# list = ['T-243-24', 'T-245-24', 'T-232-24', 'A-1043-24', 'A-979-24', 'T-248-24', 'T-244-24', 'T-216-24']
 
-find_setencia_list(list)
+#find_setencia_list(list)
+
+app = Flask(__name__)
+bcrypt = Bcrypt(app)
+
+def make_hash():
+    pw_hash = bcrypt.generate_password_hash('123456').decode('utf-8')
+    print(pw_hash)
+make_hash()

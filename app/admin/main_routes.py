@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import json
 import os
+from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 from app.mongo import get_db
 
@@ -76,14 +77,15 @@ def login():
 @main_bp.route('login/user', methods=['POST'])
 def login_user():
     if request.method == 'POST':
+        bcrypt = Bcrypt(current_app)
         email = request.form.get('email')
         pwd = request.form.get('pwd')
         db = get_db()
         users_collection = db['users']
 
         user = users_collection.find_one({'email': email, 'type': 'admin'})
-        # if not user or not check_password_hash(user['password'], password):
-        #     return jsonify({'message': 'Invalid username or password!'}), 401
+        if not user or not bcrypt.check_password_hash(user['pwd'], pwd):
+            return jsonify({'message': 'Invalid username or password!'}), 401
         token = jwt.encode({
                 'email': email,
                 'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)
