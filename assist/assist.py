@@ -218,3 +218,6 @@ def make_hash():
     pw_hash = bcrypt.generate_password_hash('123456').decode('utf-8')
     print(pw_hash)
 make_hash()
+
+# TEST aaaaaa
+
