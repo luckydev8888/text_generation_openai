@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from . import user_api_bp
 from .script import openAI_response
-from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia
+from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist
 from .models import get_users
 from app.user.users_routes import user_login_required
 
@@ -147,12 +147,11 @@ def analysis_constitucion():
     if request.method == 'POST':
         global articulo_result
 
-
         global analysis_start_time
         during_time = time.time() - analysis_start_time
         if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
 
-        pdf_content = get_pdf_text(file_path)
+        # pdf_content = get_pdf_text(file_path)
 
         send_message = f"""El archivo ConstDf.txt contiene el texto de una constitución. Su tarea es identificar y extraer todas las disposiciones constitucionales relevantes para el contenido de este documento: \"{pdf_content}\"
 
@@ -166,6 +165,35 @@ def analysis_constitucion():
 
         response = {
             'message': result_message
+        }
+        
+        analysis_start_time = time.time()
+
+        return jsonify(response), 200
+    
+@user_api_bp.route('/analysis_evidence', methods=['POST'])
+def analysis_evidence():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    if request.method == 'POST':
+        global evidence_checklist
+
+
+        global analysis_start_time
+        during_time = time.time() - analysis_start_time
+        if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
+
+        # pdf_content = get_pdf_text(file_path)
+
+        send_message = f'Este es el contenido del documento: \"{pdf_content}\". Liste las evidencias que se necesitan para confirmar cada hecho del documento'
+        result_message = openAI_response(send_message)
+        print(result_message)
+
+        evidence_checklist = generate_evidence_checklist(result_message)
+        
+        print(evidence_checklist)
+        response = {
+            'message': evidence_checklist
         }
         analysis_start_time = time.time()
 

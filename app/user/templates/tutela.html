@@ -1,143 +1,247 @@
-{% extends "user_base.html" %}
-
-{% block title %}TextAnalizer Tutelas{% endblock %}
-
-{% block content %}
+{% extends "user_base.html" %} {% block title %}TextAnalizer Tutelas{% endblock
+%} {% block content %}
 
 <!-- About Section -->
 <section id="tutela" class="about section tutela-section">
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Tutela</h2>
-        <p>Tutela</p>
-    </div><!-- End Section Title -->
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Tutela</h2>
+    <p>Tutela</p>
+  </div>
+  <!-- End Section Title -->
 
-    <div class="container">
-        <div class="row gy-5">
-            <div class="content col-xl-4 d-flex flex-column" data-aos="fade-up" data-aos-delay="100">
-                <div id="tutela_info_form">
-                    <div class="mb-5">
-                        <form id="file_upload_form" method="POST" enctype=multipart/form-data>
-                            <label for="pdf_file" class="form-label">Cargue archivo Tutela en .PDF</label>
-                            <input class="form-control" type="file" id="pdf_file" name="pdf_file">
-                        </form>
-                    </div>
-                    <button id="analysis" type="button" class="btn btn-primary mb-3">Analizar</button>
-                    <button id="reset" type="button" class="btn btn-danger mb-3">Reset</button>
-                </div>
-            </div>
-            <div class="col-xl-8" data-aos="fade-up" data-aos-delay="200">
-                <div class="row gy-4"
-                    style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; height: 800px; margin-left: 30px;">
-                    <div id="pdf_viewer">
-                        <iframe id="hole_pdf_viewer" height="100%" width=100%></iframe>
-                    </div>
-                    <div id="pdf_viewer_preloader" class="sub preloader"></div>
-                </div>
-            </div>
+  <div class="container">
+    <div class="row gy-5">
+      <div
+        class="content col-xl-4 d-flex flex-column"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      >
+        <div id="tutela_info_form">
+          <div class="mb-5">
+            <form
+              id="file_upload_form"
+              method="POST"
+              enctype="multipart/form-data"
+            >
+              <label for="pdf_file" class="form-label"
+                >Cargue archivo Tutela en .PDF</label
+              >
+              <input
+                class="form-control"
+                type="file"
+                id="pdf_file"
+                name="pdf_file"
+              />
+            </form>
+          </div>
+          <button id="analysis" type="button" class="btn btn-primary mb-3">
+            Analizar
+          </button>
+          <button id="reset" type="button" class="btn btn-danger mb-3">
+            Reset
+          </button>
         </div>
+      </div>
+      <div class="col-xl-8" data-aos="fade-up" data-aos-delay="200">
+        <div
+          class="row gy-4"
+          style="
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            height: 800px;
+            margin-left: 30px;
+          "
+        >
+          <div id="pdf_viewer">
+            <iframe id="hole_pdf_viewer" height="100%" width="100%"></iframe>
+          </div>
+          <div id="pdf_viewer_preloader" class="sub preloader"></div>
+        </div>
+      </div>
     </div>
-</section><!-- /About Section -->
+  </div>
+</section>
+<!-- /About Section -->
 
 <!-- Resumen Section -->
 <section id="resumen" class="services section tutela-section">
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Resumen</h2>
-        <p>Resumen</p>
-    </div><!-- End Section Title -->
-    <div class="container summary-body">
-        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
-            <button class="icon-button reload-button" id="summary_reload"><i class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <div class="col-xl-12" data-aos="fade-up" data-aos-delay="200">
-            <div class="row gy-4"
-                style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; overflow-y: auto; max-height: 600px; margin-left: 30px;">
-                <div id="summary_text"></div>
-            </div>
-        </div>
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Resumen</h2>
+    <p>Resumen</p>
+  </div>
+  <!-- End Section Title -->
+  <div class="container summary-body">
+    <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+      <button class="icon-button reload-button" id="summary_reload">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
-    <div id="summary_preloader" class="sub preloader">
-        <button type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    <div class="col-xl-12" data-aos="fade-up" data-aos-delay="200">
+      <div
+        class="row gy-4"
+        style="
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          overflow-y: auto;
+          max-height: 600px;
+          margin-left: 30px;
+        "
+      >
+        <div id="summary_text"></div>
+      </div>
     </div>
-</section><!-- /Resumen Section -->
+  </div>
+  <div id="summary_preloader" class="sub preloader">
+    <button
+      type="button"
+      class="btn btn-danger mb-3 text-center tutela_stopbtn"
+    >
+      Stop
+    </button>
+  </div>
+</section>
+<!-- /Resumen Section -->
 
 <!-- Constitucion Section -->
 <section id="constitucion" class="features section tutela-section">
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Constitucion</h2>
-        <p>Constitucion</p>
-    </div><!-- End Section Title -->
-    <div class="container">
-        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
-            <button class="icon-button reload-button" id="constitucion_reload"><i
-                    class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <div class="row gy-4">
-            <div id="constitucion_content"></div>
-        </div>
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Constitucion</h2>
+    <p>Constitucion</p>
+  </div>
+  <!-- End Section Title -->
+  <div class="container">
+    <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+      <button class="icon-button reload-button" id="constitucion_reload">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
-    <div id="constitucion_preloader" class="sub preloader">
-        <button type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    <div class="row gy-4">
+      <div id="constitucion_content"></div>
     </div>
-</section><!-- /Constitucion Section -->
+  </div>
+  <div id="constitucion_preloader" class="sub preloader">
+    <button
+      type="button"
+      class="btn btn-danger mb-3 text-center tutela_stopbtn"
+    >
+      Stop
+    </button>
+  </div>
+</section>
+<!-- /Constitucion Section -->
 
 <!-- Sentencias Corte Section -->
 <section id="sentencias" class="services section tutela-section">
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Sentencias Corte</h2>
-        <p>Sentencias Corte</p>
-    </div><!-- End Section Title -->
-    <div class="container">
-        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
-            <button class="icon-button reload-button" id="judgement_reload"><i
-                    class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <table id="judgement_table" class="table table-hover">
-            <thead>
-                <tr>
-                    <th>providencia</th>
-                    <th>tipo</th>
-                    <th>ano</th>
-                    <th>fecha sentencia</th>
-                    <th>tema</th>
-                    <th>magistrado</th>
-                    <th>fecha publicada</th>
-                    <th>expediente</th>
-                    <th>url</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Sentencias Corte</h2>
+    <p>Sentencias Corte</p>
+  </div>
+  <!-- End Section Title -->
+  <div class="container">
+    <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+      <button class="icon-button reload-button" id="judgement_reload">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
-    <div id="judgement_preloader" class="sub preloader">
-        <button id="" type="button" class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button>
+    <table id="judgement_table" class="table table-hover">
+      <thead>
+        <tr>
+          <th>providencia</th>
+          <th>tipo</th>
+          <th>ano</th>
+          <th>fecha sentencia</th>
+          <th>tema</th>
+          <th>magistrado</th>
+          <th>fecha publicada</th>
+          <th>expediente</th>
+          <th>url</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div id="judgement_preloader" class="sub preloader"></div>
+</section>
+<!-- /Sentencias Corte Section -->
+
+<!-- Evidencias Corte Section -->
+<section id="evidence" class="services section tutela-section">
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Verificación de Evidencias</h2>
+    <p>Seleccione si tiene o no cada evidencia requerida.</p>
+  </div>
+  <div class="container">
+    <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+      <button class="icon-button reload-button" id="evidence_reload">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
-</section><!-- /Sentencias Corte Section -->
+    <div id="evidence_list"></div>
+    <div class="w-100 text-center" data-aos="fade-up" data-aos-delay="200">
+      <button
+        id="submit_evidence"
+        type="button"
+        class="btn btn-primary mb-5 mt-4"
+      >
+        Submit Evidencias
+      </button>
+    </div>
+  </div>
+  <div id="evidence_preloader" class="sub preloader">
+    <button
+      type="button"
+      class="btn btn-danger mb-3 text-center tutela_stopbtn"
+    >
+      Stop
+    </button>
+  </div>
+</section>
+<!-- /Evidencias Corte Section -->
 
 <!-- Resultados Section -->
-<section id="resultados" class="testimonials section light-background tutela-section">
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Resultados</h2>
-        <p>Resultados</p>
-    </div><!-- End Section Title -->
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-        <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
-            <button class="icon-button reload-button" id="resultados_reload"><i
-                    class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <div id="resultados_summernote"></div>
-        <button id="resultados_save" type="button" class="btn btn-primary mb-5 mt-4">Save</button>
+<section
+  id="resultados"
+  class="testimonials section light-background tutela-section"
+>
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Resultados</h2>
+    <p>Resultados</p>
+  </div>
+  <!-- End Section Title -->
+  <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="reload-btn-panel" data-aos="fade-up" data-aos-delay="200">
+      <button class="icon-button reload-button" id="resultados_reload">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
     </div>
-    <div id="resultados_preloader" class="sub preloader"><button type="button"
-            class="btn btn-danger mb-3 text-center tutela_stopbtn">Stop</button></div>
-</section><!-- /Resultados Section -->
-{% endblock %}
-
-{% block jsContent %}
+    <div id="resultados_summernote"></div>
+    <div class="w-100 text-center" data-aos="fade-up" data-aos-delay="200">
+      <button
+        id="resultados_save"
+        type="button"
+        class="btn btn-primary mb-5 mt-4"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+  <div id="resultados_preloader" class="sub preloader">
+    <button
+      type="button"
+      class="btn btn-danger mb-3 text-center tutela_stopbtn"
+    >
+      Stop
+    </button>
+  </div>
+</section>
+<!-- /Resultados Section -->
+{% endblock %} {% block jsContent %}
+<script src="{{ url_for('user.static', filename='assets/js/main.js') }}"></script>
 <script src="{{ url_for('user.static', filename='assets/js/tutela.js') }}"></script>
 {% endblock %}

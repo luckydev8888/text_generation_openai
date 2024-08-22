@@ -106,4 +106,13 @@ def get_sentencia(str, constitution_list):
     print(sentencia_list)
     return sentencia_list
 
-
+def generate_evidence_checklist(text):
+    checklist = []
+    for line in text.split('\n'):
+        if ':' in line:
+            evidence, _ = line.split(':', 1)
+            checklist.append({
+                "value": evidence.strip(),
+                "state":  False
+                })
+    return checklist

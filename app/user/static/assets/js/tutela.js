@@ -111,7 +111,7 @@ $(document).ready(function () {
           return;
         } else {
           setTimeout(() => {
-            return ajax_summary();
+            return ajax_summary(false);
           }, 10000);
         }
       });
@@ -157,7 +157,7 @@ $(document).ready(function () {
     })
       .done(function (response) {
         if (is_reload) return;
-        return ajax_resultados();
+        return ajax_evidence(false);
       })
       .fail(function () {
         if (is_stopped) {
@@ -168,7 +168,7 @@ $(document).ready(function () {
           return;
         } else {
           setTimeout(() => {
-            return ajax_judgement();
+            return ajax_judgement(false);
           }, 10000);
         }
       });
@@ -211,7 +211,60 @@ $(document).ready(function () {
           return;
         } else {
           setTimeout(() => {
-            return ajax_constitucion();
+            return ajax_constitucion(false);
+          }, 10000);
+        }
+      });
+  }
+
+  function ajax_evidence(is_reload) {
+    return $.ajax({
+      type: "POST",
+      url: "/api/analysis_evidence",
+      success: function (response) {
+        $("#evidence_preloader").hide();
+        const evidenceListContainer = $("#evidence_list");
+        evidenceListContainer.empty();
+        const evidenceKeys = response.message;
+        var evidenceHtmlText = "";
+        evidenceKeys.forEach((key, index) => {
+          evidenceHtmlText =
+            evidenceHtmlText +
+            `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key["value"]}" id="evidence_${index}" />
+              <label class="form-check-label" for="evidence_${index}">
+                ${key["value"]}
+              </label>
+            </div>`;
+        });
+
+        evidenceListContainer[0].innerHTML = evidenceHtmlText;
+      },
+      beforeSend: function () {
+        $("#evidence_preloader").show();
+      },
+      error: function (xhr, status, error) {
+        // Handle errors
+        console.error("Error occur:", status, error);
+      },
+      statusCode: {
+        401: function () {
+          window.location.href = "/login";
+        },
+      },
+    })
+      .done(function (response) {
+        return;
+      })
+      .fail(function () {
+        if (is_stopped) {
+          $("#evidence_preloader").hide();
+          $(".tutela_stopbtn").text("Stop");
+          $(".tutela_stopbtn").prop("disabled", false);
+          is_stopped = false;
+          return;
+        } else {
+          setTimeout(() => {
+            return ajax_evidence(false);
           }, 10000);
         }
       });
@@ -303,6 +356,10 @@ $(document).ready(function () {
 
   $("#constitucion_reload").on("click", function (event) {
     ajax_constitucion(true);
+  });
+
+  $("#evidence_reload").on("click", function (event) {
+    ajax_evidence(true);
   });
 
   $("#resultados_reload").on("click", function (event) {

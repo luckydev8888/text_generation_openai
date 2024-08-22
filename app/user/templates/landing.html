@@ -1,25 +1,32 @@
-{% extends "user_base.html" %}
-
-{% block title %}TextAnalizer Tutelas{% endblock %}
-
-{% block content %}
+{% extends "user_base.html" %} {% block title %}TextAnalizer Tutelas{% endblock
+%} {% block content %}
 <!-- Hero Section -->
 <section id="home" class="hero section">
-    <div class="container">
-        <div class="row gy-4">
-            <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-                <h1>Consulta Con TextAnalizer Tutelas</h1>
-                <p>The law aims to ensure fairness and justice within the legal system</p>
-                <div class="d-flex">
-                    <a href="/" class="btn-get-started">Empezar</a>
-                </div>
-            </div>
-            <div class="col-lg-6 order-1 order-lg-2 hero-img">
-                <img src="{{url_for('user.static', filename='assets/img/hero-img.png')}}" class="img-fluid animated"
-                    alt="">
-            </div>
+  <div class="container">
+    <div class="row gy-4">
+      <div
+        class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center"
+      >
+        <h1>Consulta Con TextAnalizer Tutelas</h1>
+        <p>
+          The law aims to ensure fairness and justice within the legal system
+        </p>
+        <div class="d-flex">
+          <a href="/" class="btn-get-started">Empezar</a>
         </div>
+      </div>
+      <div class="col-lg-6 order-1 order-lg-2 hero-img">
+        <img
+          src="{{url_for('user.static', filename='assets/img/hero-img.png')}}"
+          class="img-fluid animated"
+          alt=""
+        />
+      </div>
     </div>
-</section><!-- /Hero Section -->
+  </div>
+</section>
+<!-- /Hero Section -->
 
+{% endblock %} {% block jsContent %}
+<script src="{{ url_for('user.static', filename='assets/js/main.js') }}"></script>
 {% endblock %}
