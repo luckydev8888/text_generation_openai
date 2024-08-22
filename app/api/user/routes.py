@@ -171,6 +171,7 @@ def analysis_constitucion():
 
         return jsonify(response), 200
     
+
 @user_api_bp.route('/analysis_evidence', methods=['POST'])
 def analysis_evidence():
     if 'user_info' not in session:
@@ -198,6 +199,30 @@ def analysis_evidence():
         analysis_start_time = time.time()
 
         return jsonify(response), 200
+    
+@user_api_bp.route('/submit_evidence', methods=['POST'])
+def submit_evidence():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    if request.method == 'POST':
+        global evidence_checklist
+        
+        try:
+            evidence_data = request.form.get('evidence_data')
+            evidence_checklist = evidence_data
+        except Exception as e:
+            return jsonify({"message": "Error procesando las evidencias.", "error": str(e)}), 500
+
+        # Verifica si todas las evidencias están presentes
+        if all(evidence_checklist.values()):
+            return jsonify({"message": "All evidences provided. Proceeding with further analysis."}), 200
+        else:
+            missing_evidences = []
+            for each in evidence_checklist:
+                if each['state'] == False:
+                    missing_evidences.append(each['value'])
+            return jsonify({"message": "Tutela rechazada", "missing_evidences": missing_evidences}), 400
+    
 
 @user_api_bp.route('/analysis_resultados', methods=['POST'])
 def analysis_resultados():
