@@ -14,6 +14,7 @@ $(document).ready(function () {
     is_upload = false;
     is_stopped = false;
     $("#resultados_save").prop("disabled", true);
+    $("#submit_evidence").prop("disabled", true);
     $(".preloader.sub").hide();
     $("#hole_pdf_viewer").attr("src", "");
     $("#summary_text")[0].innerHTML = "";
@@ -23,6 +24,11 @@ $(document).ready(function () {
     $("#pdf_file")[0].value = "";
   }
 
+  function stopBtnRevert() {
+    $(".tutela_stopbtn").text("Stop");
+    $(".tutela_stopbtn").prop("disabled", false);
+    is_stopped = false;
+  }
   // Ajax Function Group
 
   function ajax_reset() {
@@ -87,6 +93,8 @@ $(document).ready(function () {
         $("#summary_preloader").hide();
         console.log(response);
         $("#summary_text")[0].innerHTML = marked.parse(response.message);
+
+        stopBtnRevert();
       },
       error: function (xhr, status, error) {},
       beforeSend: function () {
@@ -105,9 +113,8 @@ $(document).ready(function () {
       .fail(function (xhr, status, error) {
         if (is_stopped) {
           $("#summary_preloader").hide();
-          $(".tutela_stopbtn").text("Stop");
-          $(".tutela_stopbtn").prop("disabled", false);
-          is_stopped = false;
+
+          stopBtnRevert();
           return;
         } else {
           setTimeout(() => {
@@ -141,6 +148,8 @@ $(document).ready(function () {
           txt += "</tr>";
         }
         $("#judgement_table tbody")[0].innerHTML = txt;
+
+        stopBtnRevert();
       },
       error: function (xhr, status, error) {
         // Handle errors
@@ -162,9 +171,8 @@ $(document).ready(function () {
       .fail(function () {
         if (is_stopped) {
           $("#judgement_preloader").hide();
-          $(".tutela_stopbtn").text("Stop");
-          $(".tutela_stopbtn").prop("disabled", false);
-          is_stopped = false;
+
+          stopBtnRevert();
           return;
         } else {
           setTimeout(() => {
@@ -184,6 +192,8 @@ $(document).ready(function () {
         $("#constitucion_content")[0].innerHTML = marked.parse(
           response.message
         );
+
+        stopBtnRevert();
       },
       beforeSend: function () {
         $("#constitucion_preloader").show();
@@ -205,9 +215,8 @@ $(document).ready(function () {
       .fail(function () {
         if (is_stopped) {
           $("#constitucion_preloader").hide();
-          $(".tutela_stopbtn").text("Stop");
-          $(".tutela_stopbtn").prop("disabled", false);
-          is_stopped = false;
+
+          stopBtnRevert();
           return;
         } else {
           setTimeout(() => {
@@ -236,8 +245,10 @@ $(document).ready(function () {
               </label>
             </div>`;
         });
-
         evidenceListContainer[0].innerHTML = evidenceHtmlText;
+        $("#submit_evidence").prop("disabled", false);
+
+        stopBtnRevert();
       },
       beforeSend: function () {
         $("#evidence_preloader").show();
@@ -258,9 +269,8 @@ $(document).ready(function () {
       .fail(function () {
         if (is_stopped) {
           $("#evidence_preloader").hide();
-          $(".tutela_stopbtn").text("Stop");
-          $(".tutela_stopbtn").prop("disabled", false);
-          is_stopped = false;
+
+          stopBtnRevert();
           return;
         } else {
           setTimeout(() => {
@@ -283,6 +293,8 @@ $(document).ready(function () {
         $("#resultados_save").prop("disabled", false);
         $("#analysis").prop("disabled", false);
         $("#reset").prop("disabled", false);
+
+        stopBtnRevert();
       },
       error: function (xhr, status, error) {
         // Handle errors
@@ -299,9 +311,8 @@ $(document).ready(function () {
     }).fail(function () {
       if (is_stopped) {
         $("#resultados_preloader").hide();
-        $(".tutela_stopbtn").text("Stop");
-        $(".tutela_stopbtn").prop("disabled", false);
-        is_stopped = false;
+
+        stopBtnRevert();
         return;
       } else {
         setTimeout(() => {
@@ -338,8 +349,6 @@ $(document).ready(function () {
 
   $("#submit_evidence").on("click", function () {
     var evidence_data = [];
-    const message = `"Tutela rechazada. Missing evidences: Para confirmar los hechos mencionados en el documento presentado como parte de la acción de tutela, se requieren las siguientes evidencias documentales, 1. **Hecho Primero**, - **Evidencia Necesaria**, 2. **Hecho Segundo**, - **Evidencia Necesaria**, 3. **Hecho Tercero**, - **Evidencia Necesaria**, 4. **Hecho Cuarto**, - **Evidencia Necesaria**, 5. **Hecho Quinto**, - **Evidencia Necesaria**"`;
-    showToast(message, "danger");
     $("#evidence_list input").each(function () {
       evidence_data.push({
         value: $(this).val(),
