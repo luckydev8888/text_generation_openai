@@ -208,19 +208,22 @@ def submit_evidence():
         global evidence_checklist
         
         try:
-            evidence_data = request.form.get('evidence_data')
+            data = request.get_json()
+            evidence_data = data.get('evidence_data')
             evidence_checklist = evidence_data
+            print(evidence_checklist)
         except Exception as e:
             return jsonify({"message": "Error procesando las evidencias.", "error": str(e)}), 500
 
         # Verifica si todas las evidencias están presentes
-        if all(evidence_checklist.values()):
+            
+        missing_evidences = []
+        for each in evidence_checklist:
+            if each['state'] == False:
+                missing_evidences.append(each['value'])
+        if len(missing_evidences) == 0:
             return jsonify({"message": "All evidences provided. Proceeding with further analysis."}), 200
         else:
-            missing_evidences = []
-            for each in evidence_checklist:
-                if each['state'] == False:
-                    missing_evidences.append(each['value'])
             return jsonify({"message": "Tutela rechazada", "missing_evidences": missing_evidences}), 400
     
 
