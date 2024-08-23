@@ -8,6 +8,11 @@ import json
 from flask_bcrypt import Bcrypt
 from flask import Flask
 
+from openai import OpenAI
+
+OPENAI_KEY = os.getenv("OPENAI_KEY")
+client2 = OpenAI(api_key=OPENAI_KEY)
+
 client = MongoClient('mongodb://localhost:27017/tutela_db')
 db = client.get_default_database()
 
@@ -211,10 +216,14 @@ def find_setencia_list(list):
 
 #find_setencia_list(list)
 
-app = Flask(__name__)
-bcrypt = Bcrypt(app)
+# app = Flask(__name__)
+# bcrypt = Bcrypt(app)
 
-def make_hash():
-    pw_hash = bcrypt.generate_password_hash('123456').decode('utf-8')
-    print(pw_hash)
-make_hash()
+# def make_hash():
+#     pw_hash = bcrypt.generate_password_hash('123456').decode('utf-8')
+#     print(pw_hash)
+# make_hash()
+
+
+file_list = client2.files.list().data
+print(file_list)

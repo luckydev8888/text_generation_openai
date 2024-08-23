@@ -8,12 +8,11 @@ from dotenv import load_dotenv
 from . import user_api_bp
 from .script import openAI_response
 from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist
-from .models import get_users
+from .models import get_users, get_constdf_file_id
 from app.user.users_routes import user_login_required
 
 load_dotenv()
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
-CONSTDF_ID = os.getenv("CONSTDF_ID")
 SAMPLE_ID = os.getenv("SAMPLE_ID")
 STAY_TIME = int(os.getenv("STAY_TIME"))
 file_path = ""
@@ -160,6 +159,8 @@ def analysis_constitucion():
                             Asegúrese de que todas las disposiciones extraídas estén claramente etiquetadas con sus números.
                             """
         analysis_start_time = time.time()
+        CONSTDF_ID = get_constdf_file_id()
+        print(CONSTDF_ID)
         result_message = openAI_response(send_message, CONSTDF_ID)
         articulo_result = get_constitution(result_message)
 

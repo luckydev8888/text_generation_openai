@@ -1,6 +1,8 @@
 from flask import jsonify
 from bson import ObjectId
 from app.mongo import get_db
+import csv
+import os
 
 field = ['id', 'articulo', 'texto', 'tutela']
 
@@ -95,3 +97,50 @@ def delete_const(id):
     except :
         # Code that runs if an exception occurs
         return jsonify({'message': 'Error occur'}), 500
+    
+def update_constdf_csv(file_path):
+    constdf_json = []
+    try:
+        with open(file_path, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                item = row['texto']
+                text = item.split('.')
+                articulo = text[0]
+                text = articulo.split(' ')
+                num = int(text[-1])
+                article = articulo[:-len(text[-1])]
+                texto = item[len(articulo)+2:]
+                if 'transitorio' in article:
+                    article = 'Articulo Transitorio'
+                else:
+                    article = 'Articulo'
+                constdf_json.append({
+                    'num': num,
+                    'articulo': article,
+                    'texto': texto,
+                    'tutela': row['tutela']
+                })
+        db = get_db()
+        constdf_collection = db['constdf']
+        constdf_collection.delete_many({})
+        for each in constdf_json:
+            constdf_collection.insert_one(each)
+        response = {
+            'message' : "successfully updated"
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        response = {
+            'message' : "error"
+        }
+        return jsonify(response), 500
+    
+def get_constdf_text():
+    db = get_db()
+    total_list = list(db['constdf'].find())
+    constdf_txt = ""
+    for item in total_list:
+        constdf_txt = f"{constdf_txt}{item['articulo']} {item['num']}: {item['texto']}.\n"
+
+    return constdf_txt

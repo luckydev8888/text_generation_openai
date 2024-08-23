@@ -191,4 +191,28 @@ $(document).ready(function () {
       type: "POST",
     });
   });
+
+  $("#upload2openaiconstdf").on("click", function () {
+    $("#upload_const_to_openai_modal").modal("show");
+  });
+
+  $("#upload_const_openai_constdf").on("click", function () {
+    return $.ajax({
+      url: "upload2openaiconstdf",
+      type: "POST",
+      beforeSend: function () {
+        $("#body_preloader").show();
+      },
+      success: function (response) {
+        showToast("Uploaded successfully!");
+        $("#upload_const_to_openai_modal").modal("hide");
+      },
+      error: function (xhr, status, error) {
+        showToast("Error: " + xhr.responseText);
+      },
+      complete: function () {
+        $("#body_preloader").hide();
+      },
+    });
+  });
 });
