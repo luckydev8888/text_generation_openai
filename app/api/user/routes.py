@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from . import user_api_bp
 from .script import openAI_response
-from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist, get_current_state, update_current_state, get_current_data_field, get_settings
+from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist, get_current_state, update_current_state, get_current_data_field, get_settings, get_title_list, save_tutela, set_tutela
 from .models import get_users
 
 load_dotenv()
@@ -39,8 +39,14 @@ def save_resultados():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     content = request.form.get('content')
-    create_docx_from_html(content, 'app/output.docx')
-    return send_file('output.docx', as_attachment=True, download_name='output.docx', mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    user = session['user_info']
+    title = get_current_data_field(user, 'title')
+    if title == '': 
+        file_name = 'output.docx'
+    else:
+        file_name = f'{title}.docx'
+    create_docx_from_html(content, f'app/{file_name}')
+    return send_file(file_name, as_attachment=True, download_name=file_name, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 
 @user_api_bp.route('/reset', methods=['POST'])
@@ -298,6 +304,51 @@ def history_get():
     current_user = session['user_info']
     loading_data = get_current_state(current_user)
 
-    # result_data = get_users()
     
     return  jsonify(loading_data), 200
+
+@user_api_bp.route('/get/list', methods=['POST'])
+def list_get():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    current_user = session['user_info']
+    title_list = get_title_list(current_user)
+
+    # result_data = get_users()
+    
+    return  jsonify(title_list), 200
+
+@user_api_bp.route('/save/state', methods=['POST'])
+def save_state():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    if request.method == 'POST':
+        
+        try:
+            data = request.get_json()
+            title = data.get('title')
+        except Exception as e:
+            return jsonify({"message": "Error procesando las evidencias.", "error": str(e)}), 500
+
+        # Verifica si todas las evidencias están presentes
+        current_user = session['user_info']
+
+        message, code = save_tutela(current_user, title)
+        return jsonify(message), code
+    
+@user_api_bp.route('/set/state', methods=['POST'])
+def set_state():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            title = data.get('title')
+        except Exception as e:
+            return jsonify({"message": "Error procesando las evidencias.", "error": str(e)}), 500
+
+        # Verifica si todas las evidencias están presentes
+        current_user = session['user_info']
+
+        message, code = set_tutela(current_user, title)
+        return jsonify(message), code

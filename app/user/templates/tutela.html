@@ -1,5 +1,9 @@
 {% extends "user_base.html" %} {% block title %}TextAnalizer Tutelas{% endblock
 %} {% block content %}
+<div class="state-btn-group">
+  <button id="open_state" type="button" class="btn btn-light">Load</button>
+  <button id="save_state" type="button" class="btn btn-primary">Save</button>
+</div>
 
 <!-- About Section -->
 <section id="tutela" class="about section tutela-section">
@@ -8,6 +12,7 @@
     <h2>Tutela</h2>
     <p id="title"></p>
   </div>
+
   <!-- End Section Title -->
 
   <div class="container">
@@ -18,7 +23,7 @@
         data-aos-delay="100"
       >
         <div id="tutela_info_form">
-          <div class="mb-5">
+          <div class="mb-5 p-2">
             <form
               id="file_upload_form"
               method="POST"
@@ -50,8 +55,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             overflow-y: auto;
-            height: 800px;
-            margin-left: 30px;
+            height: 600px;
           "
         >
           <div id="pdf_viewer">
@@ -87,7 +91,6 @@
           padding: 20px;
           overflow-y: auto;
           max-height: 600px;
-          margin-left: 30px;
         "
       >
         <div id="summary_text"></div>
@@ -227,7 +230,7 @@
         type="button"
         class="btn btn-primary mb-5 mt-4"
       >
-        Save
+        Download the Resultados
       </button>
     </div>
   </div>
@@ -240,6 +243,56 @@
     </button>
   </div>
 </section>
+
+<div id="tutela_save_modal" class="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Save Tutela</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group mb-3" id="tutela_title_list"></div>
+        <div class="mb-3">
+          <label for="tutela_save_title" class="form-label">Title name:</label>
+          <input class="form-control" id="tutela_save_title" placeholder="" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary" id="tutela_confirm_save">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tutela_Load_modal" class="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Load Tutela</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group mb-3" id="open_tutela_title_list"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- /Resultados Section -->
 {% endblock %} {% block jsContent %}
 <script src="{{ url_for('user.static', filename='assets/js/main.js') }}"></script>

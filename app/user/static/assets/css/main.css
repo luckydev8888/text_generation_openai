@@ -1809,3 +1809,15 @@ section,
   animation-fill-mode: both;
   animation-timing-function: linear;
 }
+
+.state-btn-group {
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  z-index: 9999;
+  opacity: 0.5;
+}
+
+.state-btn-group:hover {
+  opacity: 1;
+}

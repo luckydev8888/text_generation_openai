@@ -175,3 +175,44 @@ def get_settings(field):
     collection = db['settings']
     settings = collection.find_one()
     return settings[field]
+
+    
+def get_title_list(user):
+    db = get_db()
+    collection = db['results']
+    pipeline = [{'$project':{'title':1, 'user':1}},
+                {'$match': {'user':user}}]
+    res = list(collection.aggregate(pipeline=pipeline))
+    return_data = []
+    for each in res:
+        return_data.append(each['title'])
+    return return_data
+
+def save_tutela(user, title):
+    loading_data = get_current_state(user)
+    loading_data['title'] = title
+    loading_data['modifiedAt'] = datetime.now()
+    db = get_db()
+    results = db['results']
+    currents = db['current_state']
+    pipeline = [{'$project':{'_id': 1, 'title':1, 'user':1}},
+                {'$match': {'user':user, 'title': title}}]
+    res = list(results.aggregate(pipeline=pipeline))
+    if len(res) > 0:
+        results.delete_one( {'user':user, 'title': title})
+
+    results.insert_one(loading_data)
+    currents.delete_one({'user':user})
+    currents.insert_one(loading_data)
+    return {'message': "sucess"}, 200
+
+
+def set_tutela(user, title):
+    db = get_db()
+    results = db['results']
+    currents = db['current_state']
+    set_data = results.find_one({'user':user, 'title': title})
+    
+    currents.delete_one({'user':user})
+    currents.insert_one(set_data)
+    return {'message': "sucess"}, 200

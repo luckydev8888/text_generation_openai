@@ -1,3 +1,23 @@
+function SetTitle(str) {
+  $("#tutela_save_title")[0].value = str;
+}
+
+function OpenTutela(title) {
+  $.ajax({
+    url: "/api/set/state",
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify({ title: title }),
+    success: function (list) {
+      location.reload();
+    },
+    error: function (xhr) {
+      var error_response = JSON.parse(xhr.responseText);
+      showToast(error_response.message);
+    },
+  });
+}
+
 $(document).ready(function () {
   // Definition
   let is_upload;
@@ -493,16 +513,95 @@ $(document).ready(function () {
         } else return response.blob();
       })
       .then((blob) => {
+        const title = $("#tutela #title")[0].innerHTML;
+        const filename = title == "No title" ? "output.docx" : title + ".docx";
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "output.docx";
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         a.remove();
       })
       .catch(console.error);
-    // }
+  });
+
+  const tutelaModalElement = document.getElementById("tutela_save_modal");
+  const tutelaSaveModal = new bootstrap.Modal(tutelaModalElement, {
+    keyboard: false,
+  });
+  $("#save_state").on("click", function (event) {
+    $("#tutela_save_title")[0].value =
+      $("#tutela #title")[0].innerHTML == "No title"
+        ? ""
+        : $("#tutela #title")[0].innerHTML;
+    $.ajax({
+      url: "/api/get/list",
+      method: "POST",
+      success: function (list) {
+        const tutela_title_list = $("#tutela_title_list")[0];
+        var txt = "";
+        for (i = 0; i < list.length; i++) {
+          txt += `<button type="button" class="list-group-item list-group-item-action" onclick="SetTitle('${list[i]}')">
+            ${list[i]}
+          </button>`;
+        }
+        tutela_title_list.innerHTML = txt;
+        tutelaSaveModal.show();
+      },
+      error: function (xhr) {
+        var error_response = JSON.parse(xhr.responseText);
+        showToast(error_response.message);
+      },
+    });
+  });
+
+  $("#tutela_confirm_save").on("click", function (event) {
+    var title = $("#tutela_save_title")[0].value;
+    if (title == "") showToast("Please input the title", "warning");
+    else {
+      $.ajax({
+        url: "/api/save/state",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ title: title }),
+        success: function (response) {
+          showToast("Saved successfully", "success");
+          tutelaSaveModal.hide();
+          init();
+        },
+        error: function (xhr) {
+          var error_response = JSON.parse(xhr.responseText);
+          showToast(error_response.message, "danger");
+        },
+      });
+    }
+  });
+
+  const tutelaLoadModalElement = document.getElementById("tutela_Load_modal");
+  const tutelaLoadModal = new bootstrap.Modal(tutelaLoadModalElement, {
+    keyboard: false,
+  });
+  $("#open_state").on("click", function (event) {
+    $.ajax({
+      url: "/api/get/list",
+      method: "POST",
+      success: function (list) {
+        const tutela_title_list = $("#open_tutela_title_list")[0];
+        var txt = "";
+        for (i = 0; i < list.length; i++) {
+          txt += `<button type="button" class="list-group-item list-group-item-action" onclick="OpenTutela('${list[i]}')">
+            ${list[i]}
+          </button>`;
+        }
+        tutela_title_list.innerHTML = txt;
+        tutelaLoadModal.show();
+      },
+      error: function (xhr) {
+        var error_response = JSON.parse(xhr.responseText);
+        showToast(error_response.message);
+      },
+    });
   });
 
   init();

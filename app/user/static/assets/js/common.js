@@ -1,4 +1,4 @@
-function showToast(content, type) {
+function showToast(content, type = "success") {
   var delay = 10000;
   var html = `<div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body h6 p-3 m-0">${content}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>`;
   var toastElement = htmlToElement(html);
