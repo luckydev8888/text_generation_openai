@@ -604,5 +604,10 @@ $(document).ready(function () {
     });
   });
 
+  $(".modal-close-btn").on("click", function (event) {
+    tutelaLoadModal.hide();
+    tutelaSaveModal.hide();
+  });
+
   init();
 });
