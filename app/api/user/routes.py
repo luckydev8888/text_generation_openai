@@ -7,13 +7,11 @@ from dotenv import load_dotenv
 
 from . import user_api_bp
 from .script import openAI_response
-from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist
-from .models import get_users, get_constdf_file_id
-from app.user.users_routes import user_login_required
+from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist, get_current_state, update_current_state, get_current_data_field, get_settings
+from .models import get_users
 
 load_dotenv()
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
-SAMPLE_ID = os.getenv("SAMPLE_ID")
 STAY_TIME = int(os.getenv("STAY_TIME"))
 file_path = ""
 sentence_result = []
@@ -69,6 +67,7 @@ def uploadfile():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
+        user = session['user_info']
         if 'pdf_file' not in request.files:
             return jsonify("no file"), 400
         file = request.files['pdf_file']
@@ -79,18 +78,21 @@ def uploadfile():
         formatted_datetime = now.strftime("%y%m%d%H%M%S")
 
         filename = formatted_datetime + secure_filename(file.filename)
+        update_current_state(user, 'file_name', filename)
 
         
         global file_path
         file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         file.save(file_path)
+        update_current_state(user, 'file_path', file_path)
 
         global file_name
         file_name = filename
 
         global pdf_content
         pdf_content = get_pdf_text(file_path)
+        update_current_state(user, 'pdf_content', pdf_content)
 
         result_message = {'file_path': file_name}
         response = {
@@ -104,14 +106,17 @@ def analysis_pdf():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
+        user = session['user_info']
         global analysis_start_time
         during_time = time.time() - analysis_start_time
         if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
         
-        # pdf_content = get_pdf_text(file_path)
+        pdf_content = get_current_data_field(user, 'pdf_content')
         send_message = f'Este es el contenido del documento: \"{pdf_content}\". Resumir este documento'
 
         result_message = openAI_response(send_message)
+
+        update_current_state(user, 'pdf_resume', result_message)
 
         response = {
             'message': result_message
@@ -125,13 +130,16 @@ def analysis_judgement():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
+        user = session['user_info']
+        pdf_content = get_current_data_field(user, 'pdf_content')
+        articulo_result = get_current_data_field(user, 'articulo_result')
 
         sentencia_list = get_sentencia(pdf_content, articulo_result)
-
-        print(sentencia_list)
+        update_current_state(user, 'sentencia_list', sentencia_list)
         global sentence_result
 
         sentence_result = find_setencia_list(sentencia_list)
+        update_current_state(user, 'sentence_result', sentence_result)
 
         response = {
             'message': sentence_result
@@ -144,13 +152,14 @@ def analysis_constitucion():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
+        user = session['user_info']
         global articulo_result
 
         global analysis_start_time
         during_time = time.time() - analysis_start_time
         if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
 
-        # pdf_content = get_pdf_text(file_path)
+        pdf_content = get_current_data_field(user, 'pdf_content')
 
         send_message = f"""El archivo ConstDf.txt contiene el texto de una constitución. Su tarea es identificar y extraer todas las disposiciones constitucionales relevantes para el contenido de este documento: \"{pdf_content}\"
 
@@ -159,11 +168,14 @@ def analysis_constitucion():
                             Asegúrese de que todas las disposiciones extraídas estén claramente etiquetadas con sus números.
                             """
         analysis_start_time = time.time()
-        CONSTDF_ID = get_constdf_file_id()
-        print(CONSTDF_ID)
+        
+        CONSTDF_ID = get_settings('constdf_file_id')
         result_message = openAI_response(send_message, CONSTDF_ID)
+        update_current_state(user, 'constitution', result_message)
+        
         articulo_result = get_constitution(result_message)
-
+        update_current_state(user, 'articulo_result', articulo_result)
+        
         response = {
             'message': result_message
         }
@@ -178,22 +190,21 @@ def analysis_evidence():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
+        user = session['user_info']
         global evidence_checklist
-
 
         global analysis_start_time
         during_time = time.time() - analysis_start_time
         if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
 
-        # pdf_content = get_pdf_text(file_path)
+        pdf_content = get_current_data_field(user, 'pdf_content')
 
         send_message = f'Este es el contenido del documento: \"{pdf_content}\". Liste las evidencias que se necesitan para confirmar cada hecho del documento'
         result_message = openAI_response(send_message)
-        print(result_message)
 
         evidence_checklist = generate_evidence_checklist(result_message)
+        update_current_state(user, 'evidence_checklist', evidence_checklist)
         
-        print(evidence_checklist)
         response = {
             'message': evidence_checklist
         }
@@ -212,7 +223,6 @@ def submit_evidence():
             data = request.get_json()
             evidence_data = data.get('evidence_data')
             evidence_checklist = evidence_data
-            print(evidence_checklist)
         except Exception as e:
             return jsonify({"message": "Error procesando las evidencias.", "error": str(e)}), 500
 
@@ -233,12 +243,16 @@ def analysis_resultados():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
-        
+        user = session['user_info']
         global analysis_start_time
         during_time = time.time() - analysis_start_time
         if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
 
-        # pdf_content = get_pdf_text(file_path)
+        pdf_content = get_current_data_field(user, 'pdf_content')
+        sentence_result = get_current_data_field(user, 'sentence_result')
+        sentence_result = [] if sentence_result == '' else sentence_result
+        articulo_result = get_current_data_field(user, 'articulo_result')
+        articulo_result = [] if articulo_result == '' else articulo_result
 
         constitucion_text = ""
         for item in sentence_result:
@@ -254,9 +268,10 @@ def analysis_resultados():
                 
                 El archivo borrador de muestra es "sample.docx"
                 """
+        SAMPLE_ID = get_settings("sampleDoc_id")
         result_message = openAI_response(send_message,SAMPLE_ID)
 
-        print(result_message)
+        update_current_state(user, 'resultados', result_message)
         
         response = {
             'message': result_message
@@ -275,3 +290,14 @@ def users_get():
     }
     print(response)
     return  response, 200
+
+@user_api_bp.route('/get/state', methods=['POST'])
+def history_get():
+    if 'user_info' not in session:
+        return jsonify("no user"), 401
+    current_user = session['user_info']
+    loading_data = get_current_state(current_user)
+
+    # result_data = get_users()
+    
+    return  jsonify(loading_data), 200

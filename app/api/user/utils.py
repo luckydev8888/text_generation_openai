@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from docx import Document
 import re
 import PyPDF2
-import os
+import json
 from datetime import datetime
 from app.mongo import get_db
 
@@ -116,3 +116,62 @@ def generate_evidence_checklist(text):
                 "state":  False
                 })
     return checklist
+
+def get_history(user, title=''):
+    db = get_db()
+    collection = db['saves']
+    pipeline = []
+    if title == '':
+        pipeline.append({"$project":{"_id": 1, "user":1, "modifiedAt":1}})
+        pipeline.append({"$match":{"user":user}})
+        pipeline.append({"$sort":{"modifiedAt":-1}})
+        pipeline.append({"$limit":1})
+    else:
+        pipeline.append({"$project":{"_id": 1, "user":1, "modifiedAt":1, "title":1}})
+        pipeline.append({"$match":{"user":user, "title": title}})
+    find_data = list(collection.aggregate(pipeline=pipeline))
+    if len(find_data) > 1:
+        return "Error"
+    elif len(find_data) == 1:
+        history = collection.find_one({'_id': find_data[0]['_id']})
+        print(history)
+        return history
+    else:
+        return "No data"
+    
+def get_current_state(user):
+    print(user)
+    db = get_db()
+    collection = db['current_state']
+    history = collection.find_one({'user': user})
+    if history:
+        history.pop('_id', None)
+        return history
+    else:
+        collection.insert_one({"user": user})
+        return {"user": user}
+    
+def update_current_state(user, field, data):
+    db = get_db()
+    collection = db['current_state']
+    query_filter = {"user": user}
+    update_date = {}
+    update_date[field] = data
+    update_operation = {}
+    update_operation['$set'] = update_date
+    collection.update_one(query_filter, update_operation)
+
+def get_current_data_field(user, field):
+    db = get_db()
+    collection = db['current_state']
+    history = collection.find_one({'user': user})
+    if field in history:
+        return history[field]
+    else:
+        return ''
+    
+def get_settings(field):
+    db = get_db()
+    collection = db['settings']
+    settings = collection.find_one()
+    return settings[field]

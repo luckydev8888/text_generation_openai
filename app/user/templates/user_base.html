@@ -48,14 +48,14 @@
 
       <a href="/" class="logo d-flex align-items-center me-auto">
         <!-- Uncomment the line below if you also wish to use an image logo -->
-        <img src="{{ url_for('user.static', filename='assets/img/logo.jpg') }}" alt="">
+        <img src="{{ url_for('user.static', filename='assets/img/logo.jpg') }}" alt="" />
         <h1 class="sitename">TextAnalizer Tutelas</h1>
       </a>
 
       <nav id="navmenu" class="navmenu">
         <ul>
           {% if user %}
-          <li><a href="#tutela">Tutela</a></li>
+          <li><a href="tutela">Tutela</a></li>
           <li><a href="#resumen">Resumen</a></li>
           <li><a href="#sentencias">Sentencias Corte</a></li>
           <li><a href="#constitucion">Constitucion</a></li>

@@ -47,6 +47,7 @@ def home():
         try:
             data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
             email = data['email']
+            
             db = get_db()
             users_collection = db['users']
             current_user = users_collection.find_one({'email': email, 'type': 'user'})
@@ -92,6 +93,7 @@ def login_user():
         
         response = jsonify({'message': 'Login successfully'})
         response.set_cookie('user_token', token, httponly=True)
+        session['user_info'] = user['email']
         return response
     
 @users_bp.route('logout', methods=['GET', 'POST'])

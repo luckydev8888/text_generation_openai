@@ -116,7 +116,6 @@ def constdf_upload_openai(current_user):
             message_file = client.files.create(
                 file=open(constdf_path, "rb"), purpose="assistants"
             )
-            print(message_file.id)
 
             query_filter = {'_id' : settings['_id']}
             update_operation = { '$set' : 

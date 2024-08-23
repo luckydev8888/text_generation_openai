@@ -11,17 +11,82 @@ $(document).ready(function () {
   // Init variation
 
   function init() {
+    return $.ajax({
+      type: "POST",
+      url: "/api/get/state",
+      success: function (data) {
+        console.log(data);
+        $("#tutela #title")[0].innerHTML = data?.title || "No title";
+        $("#hole_pdf_viewer").attr(
+          "src",
+          data.file_name ? "/api/pdf/" + data.file_name : ""
+        );
+        $("#summary_text")[0].innerHTML = marked.parse(data?.pdf_resume || "");
+        $("#summary_preloader").hide();
+        $("#constitucion_content")[0].innerHTML = marked.parse(
+          data?.constitution || ""
+        );
+
+        list = data?.sentence_result || [];
+        var txt = "";
+        for (i = 0; i < list.length; i++) {
+          txt += "<tr>";
+          txt += "<td>" + list[i].providencia + "</td>";
+          txt += "<td>" + list[i].tipo + "</td>";
+          txt += "<td>" + list[i].ano + "</td>";
+          txt += "<td>" + list[i]["fecha_sentencia"] + "</td>";
+          txt += "<td>" + list[i].tema + "</td>";
+          txt += "<td>" + list[i].magistrado + "</td>";
+          txt += "<td>" + list[i]["fecha_publicada"] + "</td>";
+          txt += "<td>" + list[i].expediente + "</td>";
+          txt +=
+            '<td><a href="' + list[i].url + '">' + list[i].url + "</a></td>";
+          txt += "</tr>";
+        }
+        $("#judgement_table tbody")[0].innerHTML = txt;
+
+        const evidenceKeys = data?.evidence_checklist || [];
+        var evidenceHtmlText = "";
+        evidenceKeys.forEach((key, index) => {
+          evidenceHtmlText =
+            evidenceHtmlText +
+            `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key["value"]}" id="evidence_${index}" />
+              <label class="form-check-label" for="evidence_${index}">
+                ${key["value"]}
+              </label>
+            </div>`;
+        });
+        $("#evidence_list")[0].innerHTML = evidenceHtmlText;
+
+        $("#submit_evidence").prop("disabled", evidenceHtmlText == "");
+
+        $("#resultados_summernote")[0].innerHTML = marked.parse(
+          data?.resultados || ""
+        );
+
+        // $("#summary_text")[0].innerHTML = marked.parse(response.message);
+        $("#resultados_save").prop(
+          "disabled",
+          $("#resultados_summernote")[0].innerHTML == ""
+        );
+        $(".preloader.sub").hide();
+
+        $("#pdf_file")[0].value = "";
+        stopBtnRevert();
+      },
+      error: function (xhr, status, error) {},
+      beforeSend: function () {
+        $("#summary_preloader").show();
+      },
+      statusCode: {
+        401: function () {
+          window.location.href = "/login";
+        },
+      },
+    });
+
     is_upload = false;
     is_stopped = false;
-    $("#resultados_save").prop("disabled", true);
-    $("#submit_evidence").prop("disabled", true);
-    $(".preloader.sub").hide();
-    $("#hole_pdf_viewer").attr("src", "");
-    $("#summary_text")[0].innerHTML = "";
-    $("#judgement_table tbody")[0].innerHTML = "";
-    $("#constitucion_content")[0].innerHTML = "";
-    $("#resultados_summernote")[0].innerHTML = "";
-    $("#pdf_file")[0].value = "";
   }
 
   function stopBtnRevert() {
