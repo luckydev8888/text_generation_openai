@@ -66,17 +66,28 @@ $(document).ready(function () {
         $("#judgement_table tbody")[0].innerHTML = txt;
 
         const evidenceKeys = data?.evidence_checklist || [];
+        const evidenceListContainer = $("#evidence_list");
+        evidenceListContainer.empty();
+        console.log(evidenceKeys);
         var evidenceHtmlText = "";
         evidenceKeys.forEach((key, index) => {
-          evidenceHtmlText =
-            evidenceHtmlText +
-            `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key["value"]}" id="evidence_${index}" />
-              <label class="form-check-label" for="evidence_${index}">
-                ${key["value"]}
+          var evidenceItemText = `<div class="row mt-4"><h4>${index + 1}. ${
+            key["descripcion"]
+          }</h4>`;
+          const evidence = key["evidencias"];
+          evidence.forEach((key1, index1) => {
+            evidenceItemText =
+              evidenceItemText +
+              `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key1["descripcion"]}" id="evidence_${index}_${index1}" />
+              <label class="form-check-label" for="evidence_${index}_${index1}">
+                ${key1["descripcion"]}
               </label>
             </div>`;
+          });
+          evidenceItemText = evidenceItemText + "</div>";
+          evidenceHtmlText = evidenceHtmlText + evidenceItemText;
         });
-        $("#evidence_list")[0].innerHTML = evidenceHtmlText;
+        evidenceListContainer[0].innerHTML = evidenceHtmlText;
 
         $("#submit_evidence").prop("disabled", evidenceHtmlText == "");
 
@@ -320,15 +331,24 @@ $(document).ready(function () {
         const evidenceListContainer = $("#evidence_list");
         evidenceListContainer.empty();
         const evidenceKeys = response.message;
+        console.log(evidenceKeys);
         var evidenceHtmlText = "";
         evidenceKeys.forEach((key, index) => {
-          evidenceHtmlText =
-            evidenceHtmlText +
-            `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key["value"]}" id="evidence_${index}" />
-              <label class="form-check-label" for="evidence_${index}">
-                ${key["value"]}
+          var evidenceItemText = `<div><h4>${index + 1}. ${
+            key["descripcion"]
+          }</h4>`;
+          const evidence = key["evidencias"];
+          evidence.forEach((key1, index1) => {
+            evidenceItemText =
+              evidenceItemText +
+              `<div class="form-check"><input class="form-check-input" type="checkbox" value="${key1["descripcion"]}" id="evidence_${index}_${index1}" />
+              <label class="form-check-label" for="evidence_${index}_${index1}">
+                ${key1["descripcion"]}
               </label>
             </div>`;
+          });
+          evidenceItemText = evidenceItemText + "</div>";
+          evidenceHtmlText = evidenceHtmlText + evidenceItemText;
         });
         evidenceListContainer[0].innerHTML = evidenceHtmlText;
         $("#submit_evidence").prop("disabled", false);
@@ -451,12 +471,12 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         var error_response = JSON.parse(xhr.responseText);
-        showToast(
+
+        $("#resultados_summernote")[0].innerHTML =
+          "<h3>" +
           error_response.message +
-            ". Missing evidences: " +
-            error_response.missing_evidences.join(", "),
-          "danger"
-        );
+          ".</h3><h4 class='mt-3'>Missing evidences:</h4> " +
+          error_response.missing_evidences.join("<br>");
       },
     });
   });

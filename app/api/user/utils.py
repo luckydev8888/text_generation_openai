@@ -107,15 +107,15 @@ def get_sentencia(str, constitution_list):
     return sentencia_list
 
 def generate_evidence_checklist(text):
-    checklist = []
-    for line in text.split('\n'):
-        if ':' in line:
-            evidence, _ = line.split(':', 1)
-            checklist.append({
-                "value": evidence.strip(),
-                "state":  False
-                })
-    return checklist
+    match = re.search(r'```json(.*?)```', text, re.DOTALL)
+    if match:
+        json_text = match.group(1).strip()
+    else:
+        print("No JSON block found.")
+        return
+    json_object = json.loads(json_text)
+    
+    return json_object
 
 def get_history(user, title=''):
     db = get_db()
@@ -211,8 +211,15 @@ def set_tutela(user, title):
     db = get_db()
     results = db['results']
     currents = db['current_state']
-    set_data = results.find_one({'user':user, 'title': title})
+    set_data = results.find_one({'user': user, 'title': title})
     
     currents.delete_one({'user':user})
     currents.insert_one(set_data)
     return {'message': "sucess"}, 200
+
+def reset_current_state(user):
+    db = get_db()
+    currents = db['current_state']
+    currents.delete_one({'user': user})
+
+    return

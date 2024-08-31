@@ -230,9 +230,10 @@
   document.addEventListener("scroll", navmenuScrollspy);
 
   const user_logout_btn = document.getElementById("user_logout");
-
-  user_logout_btn.addEventListener("click", function (event) {
-    event.preventDefault(); // Prevent default action if necessary
-    userLogout();
-  });
+  if (user_logout_btn) {
+    user_logout_btn.addEventListener("click", function (event) {
+      event.preventDefault(); // Prevent default action if necessary
+      userLogout();
+    });
+  }
 })();

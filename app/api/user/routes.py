@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from . import user_api_bp
 from .script import openAI_response
-from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist, get_current_state, update_current_state, get_current_data_field, get_settings, get_title_list, save_tutela, set_tutela
+from .utils import find_setencia_list, create_docx_from_html, get_pdf_text, get_constitution, get_sentencia, generate_evidence_checklist, get_current_state, update_current_state, get_current_data_field, get_settings, get_title_list, save_tutela, set_tutela, reset_current_state
 from .models import get_users
 
 load_dotenv()
@@ -54,14 +54,8 @@ def reset():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
-        global file_path
-        global sentence_result
-        global articulo_result
-        global pdf_content
-        file_path = ""
-        sentence_result = []
-        articulo_result = []
-        pdf_content = ""
+        user = session['user_info']
+        reset_current_state(user)
 
         response = {
             'message': "Reset done"
@@ -205,8 +199,31 @@ def analysis_evidence():
 
         pdf_content = get_current_data_field(user, 'pdf_content')
 
-        send_message = f'Este es el contenido del documento: \"{pdf_content}\". Liste las evidencias que se necesitan para confirmar cada hecho del documento'
+        # send_message = f'Este es el contenido del documento: \"{pdf_content}\". Liste las evidencias que se necesitan para confirmar cada hecho del documento'
+        send_message = f'El contenido del documento es \"{pdf_content}\". Por favor, enumera en formato JSON las evidencias necesarias para verificar cada hecho mencionado en el documento. El formato JSON es el siguiente:' + """[{
+                "descripcion": "Compra del bien inmueble ubicado en la Calle 54c sur #88I71 – Bosa (Bogotá-Colombia) el día 29 de abril de 2023",
+                "evidencias": [
+                {
+                    "tipo": "documento",
+                    "descripcion": "Copia de la cédula de ciudadanía del propietario del inmueble, Danilo Quevedo Vaca",
+                    "archivo": "cedula_danilo_quevedo.pdf"
+                },
+                {
+                    "tipo": "fotografías",
+                    "descripcion": "Imágenes de los depósitos de basura ubicados hacia las áreas comunes",
+                    "archivo": "fotos_basura.pdf"
+                },
+                {
+                    "tipo": "videos",
+                    "descripcion": "Videos mostrando la disposición indebida de los depósitos",
+                    "archivo": "videos_basura.mp4"
+                }
+                ]
+            },...]
+            
+            La clave json es importante"""
         result_message = openAI_response(send_message)
+        print(result_message)
 
         evidence_checklist = generate_evidence_checklist(result_message)
         update_current_state(user, 'evidence_checklist', evidence_checklist)
@@ -223,8 +240,6 @@ def submit_evidence():
     if 'user_info' not in session:
         return jsonify("no user"), 401
     if request.method == 'POST':
-        global evidence_checklist
-        
         try:
             data = request.get_json()
             evidence_data = data.get('evidence_data')
@@ -303,7 +318,6 @@ def history_get():
         return jsonify("no user"), 401
     current_user = session['user_info']
     loading_data = get_current_state(current_user)
-
     
     return  jsonify(loading_data), 200
 

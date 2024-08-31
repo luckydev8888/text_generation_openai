@@ -2,9 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from functools import wraps
 import jwt
 import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
-import json
 import os
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
@@ -75,7 +73,7 @@ def login():
     return render_template('admin_login.html')
     
 @main_bp.route('login/user', methods=['POST'])
-def login_user():
+def login_admin_user():
     if request.method == 'POST':
         bcrypt = Bcrypt(current_app)
         email = request.form.get('email')
@@ -110,7 +108,9 @@ def googleLogin():
 @main_bp.route('/google/authorize')
 def authorize():
     token = oauth.google.authorize_access_token()
-    user_info = json.dump(token, indent=4)
+    print(token)
+    user_info = token.get('userinfo')
     print(user_info)
+    
     return redirect('/')
 

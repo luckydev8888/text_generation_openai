@@ -225,5 +225,96 @@ def find_setencia_list(list):
 # make_hash()
 
 
-file_list = client2.files.list().data
-print(file_list)
+# file_list = client2.files.list().data
+# print(file_list)
+
+
+def generate_evidence_checklist():
+    text = '''
+Visto que no se encontraron resultados de búsqueda coincidentes, enumero a continuación las evidencias necesarias basándome en el contenido del documento proporcionado:
+
+```json
+[
+    {
+        "descripcion": "Compra del bien inmueble ubicado en la Calle 54c sur #88I71 – Bosa (Bogotá-Colombia) el día 29 de abril de 2023",
+        "evidencias": [
+            {
+                "tipo": "documento",
+                "descripcion": "Copia de la cédula de ciudadanía del propietario del inmueble, Danilo Quevedo Vaca",
+                "archivo": "cedula_danilo_quevedo.pdf"
+            },
+            {
+                "tipo": "documento",
+                "descripcion": "Documento de compra-venta del inmueble",
+                "archivo": "compra_venta_inmueble.pdf"
+            }
+        ]
+    },
+    {
+        "descripcion": "Elección del Sr. QUEVEDO VACA como parte del consejo de administración en el año 2017",
+        "evidencias": [
+            {
+                "tipo": "documento",
+                "descripcion": "Acta de la elección del consejo de administración",
+                "archivo": "acta_eleccion_consejo_2017.pdf"
+            }
+        ]
+    },
+    {
+        "descripcion": "Presentación de derecho de petición ante la administración del Conjunto Residencial Tangara Etapa 2 el 29 de abril de 2023",
+        "evidencias": [
+            {
+                "tipo": "documento",
+                "descripcion": "Copia del derecho de petición presentado ante la Administración del Conjunto Residencial Tangara Etapa 2",
+                "archivo": "derecho_peticion_29042023.pdf"
+            },
+            {
+                "tipo": "documento",
+                "descripcion": "Sello de recibido confirmando la recepción del derecho de petición",
+                "archivo": "sello_recibido_derecho_peticion.pdf"
+            }
+        ]
+    },
+    {
+        "descripcion": "Fallos judiciales y otros actos administrativos relacionados",
+        "evidencias": [
+            {
+                "tipo": "documento",
+                "descripcion": "Sentencia de tutela a favor del solicitante",
+                "archivo": "sentencia_tutela.pdf"
+            },
+            {
+                "tipo": "documento",
+                "descripcion": "Comunicaciones con la administración del conjunto residencial sobre el seguimiento de la tutela",
+                "archivo": "comunicaciones_administracion.pdf"
+            }
+        ]
+    },
+    {
+        "descripcion": "Visita de la Secretaría Distrital de Salud para la verificación de las instalaciones",
+        "evidencias": [
+            {
+                "tipo": "documento",
+                "descripcion": "Informe de la visita realizada por la Secretaría Distrital de Salud",
+                "archivo": "informe_visita_salud.pdf"
+            }
+        ]
+    }
+]
+```
+
+Por favor, revisa el documento original o suministra los archivos mencionados para proporcionar una evaluación más precisa.
+'''
+
+    match = re.search(r'```json(.*?)```', text, re.DOTALL)
+    if match:
+        json_text = match.group(1).strip()
+    else:
+        print("No JSON block found.")
+        return
+    json_object = json.loads(json_text)
+    
+    return json_object
+
+
+generate_evidence_checklist()

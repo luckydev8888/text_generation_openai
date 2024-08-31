@@ -83,11 +83,7 @@
         <nav id="navmenu" class="navmenu">
           <ul>
             {% if user %}
-            <li><a href="tutela">Tutela</a></li>
-            <li><a href="#resumen">Resumen</a></li>
-            <li><a href="#sentencias">Sentencias Corte</a></li>
-            <li><a href="#constitucion">Constitucion</a></li>
-            <li><a href="#resultados">Resultados</a></li>
+            <li><a href="/tutela">Tutela</a></li>
             <li><a href="" id="user_logout">Log out</a></li>
             {% else %}
             <li><a href="login">Login</a></li>
@@ -127,7 +123,7 @@
         style="z-index: 9; margin-top: 100px"
       ></div>
 
-      {% if "login" in request.path %} {% else %}
+      {% if "login" in request.path or "register" in request.path %} {% else %}
       <footer id="footer" class="footer">
         <div class="container">
           <div class="copyright text-center">
