@@ -1,9 +1,12 @@
 from flask import render_template, request, Blueprint, session, redirect, url_for
 from app.admin.script.sentencias import get_sentencias, get_sentencia, save_sentencias, delete_sentencias, texto_scrap
-from app.admin.main_routes import login_required
+from app.admin.main_routes import login_required, check_login_admin
 from app.mongo import get_user_info
 
 sentencias_bp = Blueprint('sentencias', __name__, url_prefix="sentencias")
+
+
+
 # sentencias page
 @sentencias_bp.route('/')
 def sentencias():
@@ -15,7 +18,7 @@ def sentencias():
 
 @sentencias_bp.route('/get', methods=['POST'])
 def sentencias_get():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         keyword = request.form.get('search[value]')
@@ -27,7 +30,7 @@ def sentencias_get():
 
 @sentencias_bp.route('/get/sentencia', methods=['POST'])
 def sentencia_get():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
@@ -36,7 +39,7 @@ def sentencia_get():
 
 @sentencias_bp.route('/save', methods=['POST'])
 def sentencias_save():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         save_data = {
@@ -57,7 +60,7 @@ def sentencias_save():
 
 @sentencias_bp.route('/delete', methods=['POST'])
 def sentencias_delete():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
@@ -66,7 +69,7 @@ def sentencias_delete():
 
 @sentencias_bp.route('/scrap', methods=['POST'])
 def sentencias_texto_scrap():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         url = request.form.get('url')

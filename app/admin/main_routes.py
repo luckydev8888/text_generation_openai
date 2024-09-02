@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, make_response, session
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, make_response, session, flash
 from functools import wraps
 import jwt
 import datetime
@@ -27,6 +27,12 @@ google = oauth.register(
     }
 )
 
+def check_login_admin():
+    if 'admin_info' not in session:
+        flash('We need you to log in to proceed.', 'warning')
+        return True
+    return False
+
 def create_token(email):
     return jwt.encode({
         'email': email,
@@ -37,7 +43,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.cookies.get('admin_token')
-        if not token:
+        if not token or 'admin_info' not in session:
             return redirect(url_for('admin.main.login'))
         try:
             data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
@@ -60,7 +66,7 @@ def login_required(f):
 @main_bp.route('/', methods=['GET'])
 def admin_first():
     token = request.cookies.get('user_token')
-    if not token:
+    if not token or 'admin_info' not in session:
         return redirect(url_for('admin.main.login'))
     try:
         data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
@@ -74,12 +80,11 @@ def admin_first():
         return redirect(url_for('admin.constdf.constdf'))
     except Exception as e:
         return redirect(url_for('admin.main.login'))
-    
 
 @main_bp.route('login', methods=['GET'])
 def login():
     token = request.cookies.get('admin_token')
-    if token:
+    if token and 'admin_info' in session:
         data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
         db = get_db()
         users_collection = db['users']
@@ -126,9 +131,7 @@ def googleLogin():
 @main_bp.route('/google/authorize')
 def authorize():
     token = oauth.google.authorize_access_token()
-    print(token)
     user_info = token.get('userinfo')
-    print(user_info)
     
     return redirect('/')
 

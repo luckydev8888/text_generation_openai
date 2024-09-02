@@ -19,11 +19,17 @@ articulo_result = []
 pdf_content = ""
 analysis_start_time = time.time() - STAY_TIME
 
+def check_login_user():
+    if 'user_info' not in session:
+        flash('We need you to log in to proceed.', 'warning')
+        return True
+    return False
+
+
 
 @user_api_bp.route('/pdf/<path:filename>')
 def pdf_serve_static(filename):
-    if 'user_info' not in session:
-        flash('We need you to log in to proceed.', 'warning')
+    if check_login_user():
         return jsonify("no user"), 401
     if '..' in filename or filename.startswith('/'):
         return abort(400)
@@ -37,8 +43,7 @@ def pdf_serve_static(filename):
 
 @user_api_bp.route('/save_resultados', methods=['POST'])
 def save_resultados():
-    if 'user_info' not in session:
-        flash('We need you to log in to proceed.', 'warning')
+    if check_login_user():
         return jsonify("no user"), 401
     content = request.form.get('content')
     user = session['user_info']
@@ -50,10 +55,9 @@ def save_resultados():
     create_docx_from_html(content, f'app/{file_name}')
     return send_file(file_name, as_attachment=True, download_name=file_name, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
-
 @user_api_bp.route('/reset', methods=['POST'])
 def reset():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -66,7 +70,7 @@ def reset():
 
 @user_api_bp.route('/uploadfile', methods=['POST'])
 def uploadfile():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -105,7 +109,7 @@ def uploadfile():
 
 @user_api_bp.route('/analysis_pdf', methods=['POST'])
 def analysis_pdf():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -129,7 +133,7 @@ def analysis_pdf():
     
 @user_api_bp.route('/analysis_judgement', methods=['POST'])
 def analysis_judgement():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -151,7 +155,7 @@ def analysis_judgement():
 
 @user_api_bp.route('/analysis_constitucion', methods=['POST'])
 def analysis_constitucion():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -185,11 +189,10 @@ def analysis_constitucion():
         analysis_start_time = time.time()
 
         return jsonify(response), 200
-    
 
 @user_api_bp.route('/analysis_evidence', methods=['POST'])
 def analysis_evidence():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -239,7 +242,7 @@ def analysis_evidence():
     
 @user_api_bp.route('/submit_evidence', methods=['POST'])
 def submit_evidence():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         try:
@@ -259,11 +262,10 @@ def submit_evidence():
             return jsonify({"message": "All evidences provided. Proceeding with further analysis."}), 200
         else:
             return jsonify({"message": "Tutela rechazada", "missing_evidences": missing_evidences}), 400
-    
 
 @user_api_bp.route('/analysis_resultados', methods=['POST'])
 def analysis_resultados():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
@@ -305,7 +307,7 @@ def analysis_resultados():
     
 @user_api_bp.route('/users/get', methods=['POST'])
 def users_get():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     result_data = get_users()
     response = {
@@ -316,7 +318,7 @@ def users_get():
 
 @user_api_bp.route('/get/state', methods=['POST'])
 def history_get():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     current_user = session['user_info']
     loading_data = get_current_state(current_user)
@@ -325,7 +327,7 @@ def history_get():
 
 @user_api_bp.route('/get/list', methods=['POST'])
 def list_get():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     current_user = session['user_info']
     title_list = get_title_list(current_user)
@@ -336,7 +338,7 @@ def list_get():
 
 @user_api_bp.route('/save/state', methods=['POST'])
 def save_state():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         
@@ -354,7 +356,7 @@ def save_state():
     
 @user_api_bp.route('/set/state', methods=['POST'])
 def set_state():
-    if 'user_info' not in session:
+    if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         try:
@@ -368,3 +370,4 @@ def set_state():
 
         message, code = set_tutela(current_user, title)
         return jsonify(message), code
+    

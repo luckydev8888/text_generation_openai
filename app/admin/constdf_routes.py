@@ -1,6 +1,6 @@
 from flask import render_template, request, Blueprint, jsonify, session, redirect, url_for
 from app.admin.script.const import get_const, add_const, update_const, delete_const, update_constdf_csv, get_constdf_text
-from app.admin.main_routes import login_required
+from app.admin.main_routes import login_required, check_login_admin
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import os
@@ -20,7 +20,7 @@ constdf_bp = Blueprint('constdf', __name__, url_prefix="constdf")
 # constdf page
 @constdf_bp.route('/')
 def constdf():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     current_user = get_user_info(session['admin_info'], 'admin')
     return render_template('constdf.html', user=current_user)
@@ -28,7 +28,7 @@ def constdf():
 
 @constdf_bp.route('/get', methods=['POST'])
 def constdf_get():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         keyword = request.form.get('search[value]')
@@ -40,7 +40,7 @@ def constdf_get():
 
 @constdf_bp.route('/save', methods=['POST'])
 def constdf_save():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
@@ -56,7 +56,7 @@ def constdf_save():
 
 @constdf_bp.route('/delete', methods=['POST'])
 def constdf_delete():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
@@ -65,7 +65,7 @@ def constdf_delete():
     
 @constdf_bp.route('/uploadconstdfcsv', methods=['POST'])
 def constdf_upload_constdf_csv():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         if 'constdf_csv_file' not in request.files:
@@ -90,7 +90,7 @@ def constdf_upload_constdf_csv():
     
 @constdf_bp.route('/updateconstdf', methods=['POST'])
 def constdf_update_csv():
-    if 'admin_info' not in session:
+    if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
 

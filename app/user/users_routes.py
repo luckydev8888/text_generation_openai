@@ -65,7 +65,7 @@ def user_login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.cookies.get('user_token')
-        if not token or not 'user_info' in session:
+        if not token or 'user_info' not in session:
             return redirect(url_for('user.users.login_page'))
         try:
             data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
@@ -88,7 +88,7 @@ def user_login_required(f):
 @users_bp.route('/')
 def home():
     token = request.cookies.get('user_token')
-    if not token or not 'user_info' in session:
+    if not token or 'user_info' not in session:
         current_user = {}
     else:
         try:
