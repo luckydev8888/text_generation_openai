@@ -7,6 +7,9 @@ import requests
 import json
 from flask_bcrypt import Bcrypt
 from flask import Flask
+import PyPDF2
+from dotenv import load_dotenv
+load_dotenv()
 
 from openai import OpenAI
 
@@ -316,5 +319,170 @@ Por favor, revisa el documento original o suministra los archivos mencionados pa
     
     return json_object
 
+def make_fine_tuning_train_data():
+    folder_path = '../'
+    cnt = 0
+    with open('output.jsonl', 'w') as f:
+        for filename in os.listdir(folder_path):
+            print(filename)
+            if filename.endswith('.pdf'):
+                if 'respuesta' in filename:
+                    continue
+                pdf_path1 = os.path.join(folder_path, filename)
+                name, extension = filename.rsplit('.', 1)
+                new_filename = f"{name}_respuesta.{extension}"
+                pdf_path2 = os.path.join(folder_path, new_filename)
+                try:
+                    pdf_content1 = ''
+                    pdf_content2 = ''
+                    with open(pdf_path1, 'rb') as pdf_file:
+                        reader = PyPDF2.PdfReader(pdf_file)
+                        for page_num in range(len(reader.pages)):
+                            page = reader.pages[page_num]
+                            pdf_content1 = f'{pdf_content1}{page.extract_text()}'
+                    
+                    with open(pdf_path2, 'rb') as pdf_file:
+                        reader = PyPDF2.PdfReader(pdf_file)
+                        for page_num in range(len(reader.pages)):
+                            page = reader.pages[page_num]
+                            pdf_content2 = f'{pdf_content2}{page.extract_text()}'
+                    cnt += 1
+                    item = {"messages": [{"role": "system", "content": "Eres asistente de un abogado."}, {"role": "user", "content": f"Nuevo documento:\'{pdf_content1}\' Con base en el nuevo documento, la lista de revisiones judiciales relevantes (cuyo contenido está disponible en la tienda de vectores) y las disposiciones constitucionales proporcionadas, redacte una sentencia para el nuevo documento."}, {"role": "assistant", "content": pdf_content2}]}
+                    f.write(json.dumps(item) + '\n')
+                except Exception as e:
+                    print(e)
+        with open('output-test.jsonl', 'r', encoding='utf-8') as fi:
+            for line in fi:
+                json_object = json.loads(line.strip())
+                f.write(json.dumps(json_object) + '\n')
+                cnt += 1
+                if cnt >= 10: break
+            
+    return
 
-generate_evidence_checklist()
+# make_fine_tuning_train_data()
+def fine_tuning_upload():
+    client2.files.delete("file-Og2S0kOgbIXHzVUIBpJV4AtU")
+    message = client2.files.list()
+    print(message.data)
+    file_path = 'formato_respuesta_textanalizer.docx'
+    message_file = client2.files.create(
+        file=open(file_path, "rb"), purpose="assistants"
+    )
+
+    print(message_file.id)
+
+    message = client2.fine_tuning.jobs.create(
+      training_file=message_file.id,
+      model="gpt-4o-mini-2024-07-18"
+    )
+
+    message = client2.fine_tuning.jobs.list()
+    print(message.data)
+
+import smtplib
+def send_email_via_smtp(email, message):
+    
+    # creates SMTP session
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    # start TLS for security
+    s.starttls()
+    # Authentication
+    # s.login("mailer@theastralabs.com", "oxgvjlpoxhpzfvoq")
+    
+    MESSAGE_SENDER = str(os.getenv('MESSAGE_SENDER'))
+    MESSAGE_SENDER_APP_PASSWORD = str(os.getenv('MESSAGE_SENDER_APP_PASSWORD'))
+    print(email, message, MESSAGE_SENDER, MESSAGE_SENDER_APP_PASSWORD)
+    s.login(MESSAGE_SENDER, MESSAGE_SENDER_APP_PASSWORD)
+    # message to be sent
+    # message = "Message_you_need_to_send 1"
+    # sending the mail
+    s.sendmail("mailer@theastralabs.com", email, message)
+    # terminating the session
+    s.quit()
+# send_email()
+
+def send_email_via_smtp(email, message):
+    import smtplib
+    import os
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    MESSAGE_SENDER = str(os.getenv('MESSAGE_SENDER'))
+    MESSAGE_SENDER_APP_PASSWORD = str(os.getenv('MESSAGE_SENDER_APP_PASSWORD'))
+    msg = MIMEMultipart()
+    msg['From'] = MESSAGE_SENDER
+    msg['To'] = email
+    msg['Subject'] = "Verify your email"
+    
+    # Attach the message body (it could be plain text or HTML)
+    msg.attach(MIMEText(message, 'HTML')) 
+
+    try:
+        s.login(MESSAGE_SENDER, MESSAGE_SENDER_APP_PASSWORD)
+        s.sendmail(MESSAGE_SENDER, email, msg.as_string())
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+    finally:
+        s.quit()
+    return
+
+
+def send_email_with_other_way(email):
+    import smtplib
+    import ssl
+    from email.message import EmailMessage
+
+    MESSAGE_SENDER = str(os.getenv('MESSAGE_SENDER'))
+    MESSAGE_SENDER_APP_PASSWORD = str(os.getenv('MESSAGE_SENDER_APP_PASSWORD'))
+
+    sender_email = MESSAGE_SENDER
+    receiver_email = email
+    password = MESSAGE_SENDER_APP_PASSWORD
+
+    em = EmailMessage()
+    em['From'] = MESSAGE_SENDER
+    em['To'] = receiver_email
+    em["Subject"] = "multipart test"
+
+    # Create the plain-text and HTML version of your message
+    text = """\
+    Hi,
+    How are you?
+    Real Python has many great tutorials:
+    www.realpython.com"""
+    html = """\
+    <html>
+    <body>
+        <p>Hi,<br>
+        How are you?<br>
+        <a href="http://www.realpython.com">Real Python</a> 
+        has many great tutorials.
+        </p>
+    </body>
+    </html>
+    """
+
+    em.set_content(html)
+
+    context = ssl.create_default_context()
+    
+    print(sender_email, password)
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(sender_email, password)
+        server.sendmail(
+            sender_email, receiver_email, em.as_string()
+        )
+    return
+
+email = "crystaldev1003@gmail.com"
+message = """
+    <div><p>Welcome Tutela</p>
+    Click <a href='http://localhost:5000/confirm_email/ImNyeXN0YWxkZXYxMDAzQGdtYWlsLmNvbSI.ZtRzgg.cCKm8J38B7L3uCTXhSH7vFLskgs'>here</a> for verify
+    </div>
+    """
+send_email_via_smtp(email, message)
+# send_email_with_other_way(email)

@@ -1,12 +1,16 @@
-from flask import render_template, Blueprint, current_app, request, redirect, url_for, make_response, jsonify, session
+from flask import render_template, Blueprint, current_app, request, redirect, url_for, make_response, jsonify, session, flash
+import smtplib
+from itsdangerous import SignatureExpired, BadTimeSignature
 import jwt
 import datetime
 from functools import wraps
 from flask_bcrypt import Bcrypt
-from app.mongo import get_db
+from app.mongo import get_db, s
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 users_bp = Blueprint('users', __name__)
 
@@ -26,6 +30,28 @@ google = oauth.register(
         'scope': 'openid email profile'
     }
 )
+
+def send_email_via_smtp(email, message):
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    MESSAGE_SENDER = str(os.getenv('MESSAGE_SENDER'))
+    MESSAGE_SENDER_APP_PASSWORD = str(os.getenv('MESSAGE_SENDER_APP_PASSWORD'))
+    msg = MIMEMultipart()
+    msg['From'] = MESSAGE_SENDER
+    msg['To'] = email
+    msg['Subject'] = "Verify your email"
+    
+    msg.attach(MIMEText(message, 'HTML')) 
+
+    try:
+        s.login(MESSAGE_SENDER, MESSAGE_SENDER_APP_PASSWORD)
+        s.sendmail(MESSAGE_SENDER, email, msg.as_string())
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+    finally:
+        s.quit()
+    return
 
 
 def create_user_token(email):
@@ -106,6 +132,10 @@ def login_user():
         user = users_collection.find_one({'email': email, 'type': 'user'})
         if not user or not bcrypt.check_password_hash(user['pwd'], pwd):
             return jsonify({'message': 'Invalid username or password!'}), 401
+        
+        if user['verify'] == False:
+            return jsonify({'message': 'Verify your email to complete the process!'}), 401
+        
         token = jwt.encode({
                 'email': email,
                 'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)
@@ -146,6 +176,7 @@ def userAuthorize():
                 'given_name': user_info['given_name'],
                 'family_name': user_info['family_name'],
                 'picture': user_info['picture'],
+                'verify': True,
                 'createdAt': datetime.datetime.now()
             })
         new_token = create_user_token(user_info['email'])
@@ -171,17 +202,68 @@ def register_user():
         db = get_db()
         users_collection = db['users']
 
+
         user = users_collection.find_one({'email': email, 'type': 'user'})
         if user:
             return jsonify({'message': 'The email exists'}), 400
+        
+        token = s.dumps(email, salt='email-confirm')
+        link = url_for('user.users.confirm_email', token=token, _external=True)
+        html_content = f"""
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; max-width: 600px; margin: 20px auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center; padding: 10px 0; border-bottom: 1px solid #dddddd;">
+                <h1>Email Verification</h1>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p>Hi there,</p>
+                <p>Thank you for registering! Please click the button below to verify your email address:</p>
+                <p>
+                    <a href="{link}" style="background-color: #007BFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Verify Email
+                    </a>
+                </p>
+                <p>If you did not sign up for this account, you can safely ignore this email.</p>
+            </div>
+            <div style="margin-top: 20px; font-size: 12px; color: #777777; text-align: center;">
+                <p>&copy; TextAnalizer Tutelas All Rights Reserved</p>
+            </div>
+        </div>
+        """
+        send_email_via_smtp(email, html_content)
         users_collection.insert_one({
             'email': email,
             'type': 'user',
-            'pwd': bcrypt.generate_password_hash(pwd),
+            'pwd': bcrypt.generate_password_hash(pwd).decode('utf-8'),
             'given_name': givenName,
             'family_name': familyName,
+            'verify': False,
             'createdAt': datetime.datetime.now()
         })
         
-        
         return jsonify({'message': 'Successfully registered'}), 200
+    
+@users_bp.route('/confirm_email/<token>')
+def confirm_email(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=3600)
+
+        db = get_db()
+        users_collection = db['users']
+
+        query_filter = {'email' : email, 'type': 'user'}
+        update_operation = { '$set' : 
+            { 
+                'verify': True
+            }
+        }
+        users_collection.update_one(query_filter, update_operation)
+
+        flash('Your email has been verified successfully!', 'success')
+    except SignatureExpired:
+        flash('The confirmation link has expired.', 'danger')
+        return redirect(url_for('user.users.userRegisterPage'))
+    except BadTimeSignature:
+        flash('The confirmation link is invalid.', 'danger')
+        return redirect(url_for('user.users.userRegisterPage'))
+    
+    return redirect(url_for('user.users.login_page'))

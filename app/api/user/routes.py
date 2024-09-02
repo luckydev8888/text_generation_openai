@@ -287,7 +287,7 @@ def analysis_resultados():
 
                 Con base en el nuevo documento, la lista de revisiones judiciales relevantes (cuyo contenido está disponible en la tienda de vectores) y las disposiciones constitucionales proporcionadas, redacte una sentencia para el nuevo documento.
                 
-                El archivo borrador de muestra es "sample.docx"
+                Esta es la estructura del documento: "formato_respuesta_textanalizer.docx"
                 """
         SAMPLE_ID = get_settings("sampleDoc_id")
         result_message = openAI_response(send_message,SAMPLE_ID)
