@@ -13,3 +13,11 @@ def get_user_info(email, type):
         return user
     except Exception as e:
         return "Something went wrong"
+    
+def update_user_info(email, type, update_data):
+    db = get_db()
+    collection = db['users']
+    query_filter = {"email": email, 'type': type}
+    update_operation = {}
+    update_operation['$set'] = update_data
+    collection.update_one(query_filter, update_operation)

@@ -5,7 +5,7 @@ import jwt
 import datetime
 from functools import wraps
 from flask_bcrypt import Bcrypt
-from app.mongo import get_db
+from app.mongo import get_db, get_user_info, update_user_info
 from app.extension import s
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
@@ -165,11 +165,9 @@ def userAuthorize():
     try:
         token = oauth.google.authorize_access_token()
         user_info = token.get('userinfo')
-        print(user_info)
         db = get_db()
         collection = db['users']
         current_user = collection.find_one({'email': user_info['email'], 'type': 'user'})
-        print(current_user)
         if not current_user:
             collection.insert_one({
                 'email': user_info['email'],
@@ -268,3 +266,40 @@ def confirm_email(token):
         return redirect(url_for('user.users.userRegisterPage'))
     
     return redirect(url_for('user.users.login_page'))
+
+@users_bp.route('/profile')
+def userProfilePage():
+    if 'user_info' not in session:
+        return redirect(url_for('user.users.login_page'))
+    useremail = session['user_info']
+    user = get_user_info(useremail,'user')
+    return render_template('user_profile.html', user=user)
+
+@users_bp.route('/profile/save', methods=['POST'])
+def userProfileSave():
+    if 'user_info' not in session:
+        return redirect(url_for('user.users.login_page'))
+    
+    if request.method == 'POST':
+        try:
+            bcrypt = Bcrypt(current_app)
+            user_email = session['user_info']
+            update_data = {}
+            update_data['given_name'] = request.form.get('given_name')
+            update_data['family_name'] = request.form.get('family_name')
+            update_data['phone_number'] = request.form.get('phone_number')
+            update_data['address'] = request.form.get('address')
+            old_pwd = request.form.get('old_pwd')
+            new_pwd = request.form.get('new_pwd')
+
+            user = get_user_info(user_email, 'user')
+            
+            if (old_pwd or new_pwd) and not bcrypt.check_password_hash(user['pwd'], old_pwd):
+                return jsonify({'message': 'The current password you entered is incorrect.'}), 400
+            if old_pwd:
+                update_data['pwd'] = bcrypt.generate_password_hash(new_pwd).decode('utf-8')
+            
+            update_user_info(user_email, 'user', update_data)
+            return jsonify({'message': 'success'}), 200
+        except Exception as e:
+            return jsonify({'message': 'Something went wrong'}), 400
