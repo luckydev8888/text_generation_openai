@@ -86,15 +86,16 @@
             <li><a href="/tutela">Tutela</a></li>
             <li class="dropdown">
               <a href=""
-                ><span class="text-primary">{{user['given_name']}} {{user.family_name}}</span>
+                ><span class="text-primary"
+                  >{{user['given_name']}} {{user.family_name}}</span
+                >
                 <i class="bi bi-chevron-down toggle-dropdown"></i
               ></a>
               <ul class="w-100">
                 <li><a href="/profile">Profile</a></li>
-                <hr style="margin: 0"/>
+                <hr style="margin: 0" />
                 <li><a href="" id="user_logout">Log out</a></li>
               </ul>
-            </li>
             </li>
             {% else %}
             <li><a href="/login">Login</a></li>
@@ -107,26 +108,6 @@
     </header>
 
     <main class="main">
-      <div
-        id="admin_toast"
-        class="toast"
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-        data-delay="2000"
-        style="
-          position: absolute;
-          top: 7rem;
-          right: 2rem;
-          z-index: 9999;
-          color: aqua;
-          width: 350px;
-          background-color: blueviolet;
-        "
-      >
-        <div class="toast-body">Some text inside the toast body</div>
-      </div>
-
       {% block content %} {% endblock %}
 
       <div
@@ -174,6 +155,10 @@
       <!-- Preloader -->
       <div id="preloader" class="preloader"></div>
       {% endif %}
+
+      <script>
+        var flashMessages = {{ get_flashed_messages(with_categories=true)|tojson }};
+      </script>
 
       <!-- Vendor JS Files -->
 

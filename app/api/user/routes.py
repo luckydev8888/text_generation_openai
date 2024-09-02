@@ -1,4 +1,4 @@
-from flask import jsonify, request, send_file, send_from_directory, abort, session, redirect, url_for
+from flask import jsonify, request, send_file, send_from_directory, abort, session, redirect, url_for, flash
 from datetime import datetime
 import time
 import os
@@ -23,6 +23,7 @@ analysis_start_time = time.time() - STAY_TIME
 @user_api_bp.route('/pdf/<path:filename>')
 def pdf_serve_static(filename):
     if 'user_info' not in session:
+        flash('We need you to log in to proceed.', 'warning')
         return jsonify("no user"), 401
     if '..' in filename or filename.startswith('/'):
         return abort(400)
@@ -37,6 +38,7 @@ def pdf_serve_static(filename):
 @user_api_bp.route('/save_resultados', methods=['POST'])
 def save_resultados():
     if 'user_info' not in session:
+        flash('We need you to log in to proceed.', 'warning')
         return jsonify("no user"), 401
     content = request.form.get('content')
     user = session['user_info']

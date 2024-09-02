@@ -65,7 +65,7 @@ def user_login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.cookies.get('user_token')
-        if not token:
+        if not token or not 'user_info' in session:
             return redirect(url_for('user.users.login_page'))
         try:
             data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
@@ -80,6 +80,7 @@ def user_login_required(f):
         new_token = create_user_token(email)
         response = make_response(f(current_user, *args, **kwargs))
         response.set_cookie('user_token', new_token, httponly=True)
+        session.permanent = True
         session['user_info'] = current_user['email']
         return response
     return decorated
@@ -87,7 +88,7 @@ def user_login_required(f):
 @users_bp.route('/')
 def home():
     token = request.cookies.get('user_token')
-    if not token:
+    if not token or not 'user_info' in session:
         current_user = {}
     else:
         try:
@@ -112,14 +113,15 @@ def login_page():
             current_user = users_collection.find_one({'email': data['email'], 'type': 'user'})
 
             if current_user:
+                session.permanent = True
                 session['user_info'] = current_user['email']
                 return redirect(url_for('user.users.home'))
             else:
                 raise Exception("User not found")
         except Exception as e:
+            flash(e, 'danger')
             return render_template('user_login.html')
     return render_template('user_login.html')
-
 
 @users_bp.route('login/users', methods=['POST'])
 def login_user():
@@ -144,7 +146,9 @@ def login_user():
         
         response = jsonify({'message': 'Login successfully'})
         response.set_cookie('user_token', token, httponly=True)
+        session.permanent = True
         session['user_info'] = user['email']
+        flash("Welcome back! You've logged in successfully.", 'success')
         return response
     
 @users_bp.route('logout', methods=['GET', 'POST'])
@@ -158,7 +162,6 @@ def logout_user():
 @users_bp.route('/login/google')
 def userGoogleLogin():
     return oauth.google.authorize_redirect(redirect_uri=url_for('user.users.userAuthorize', _external=True))
-
 
 @users_bp.route('/google/authorize')
 def userAuthorize():
@@ -181,9 +184,12 @@ def userAuthorize():
         new_token = create_user_token(user_info['email'])
         response = make_response(redirect(url_for('user.users.home')))
         response.set_cookie('user_token', new_token, httponly=True)
+        session.permanent = True
         session['user_info'] = current_user['email']
+        flash("Welcome back! You've logged in successfully.", 'success')
         return response
     except Exception as e:
+        flash("Something went wrong", 'danger')
         return redirect('/')
     
 @users_bp.route('/register')
@@ -238,7 +244,7 @@ def register_user():
             'verify': False,
             'createdAt': datetime.datetime.now()
         })
-        
+        flash("You're registered! Check your inbox for a confirmation email.", 'success')
         return jsonify({'message': 'Successfully registered'}), 200
     
 @users_bp.route('/confirm_email/<token>')
@@ -264,6 +270,8 @@ def confirm_email(token):
     except BadTimeSignature:
         flash('The confirmation link is invalid.', 'danger')
         return redirect(url_for('user.users.userRegisterPage'))
+    except Exception:
+        flash('Something went wrong', 'danger')
     
     return redirect(url_for('user.users.login_page'))
 
@@ -278,6 +286,7 @@ def userProfilePage():
 @users_bp.route('/profile/save', methods=['POST'])
 def userProfileSave():
     if 'user_info' not in session:
+        flash('We need you to log in to proceed.', 'warning')
         return redirect(url_for('user.users.login_page'))
     
     if request.method == 'POST':

@@ -52,6 +52,7 @@ def login_required(f):
         new_token = create_token(email)
         response = make_response(f(current_user, *args, **kwargs))
         response.set_cookie('admin_token', new_token, httponly=True)
+        session.permanent = True
         session['admin_info'] = current_user['email']
         return response
     return decorated
@@ -106,6 +107,7 @@ def login_admin_user():
         
         response = jsonify({'message': 'Login successfully'})
         response.set_cookie('admin_token', token, httponly=True)
+        session.permanent = True
         session['admin_info'] = user['email']
         return response
 

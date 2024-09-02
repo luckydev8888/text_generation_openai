@@ -1,4 +1,4 @@
-from flask import render_template, Blueprint, session, jsonify, request, redirect, url_for
+from flask import render_template, Blueprint, session, jsonify, request, redirect, url_for, flash
 from app.mongo import get_user_info
 
 tutela_bp = Blueprint('tutela', __name__, url_prefix="tutela")
@@ -9,7 +9,6 @@ def tutela_page():
         return redirect(url_for('user.users.login_page'))
     current_user = session['user_info']
     user = get_user_info(current_user, 'user')
-    
     return render_template('tutela.html', user=user)
 
 
@@ -19,5 +18,4 @@ def get_title():
         return redirect(url_for('user.users.login_page'))
     current_user = session['user_info']
     title = request.args.get('title', '')
-
     return render_template('tutela.html', user=current_user, title=title)

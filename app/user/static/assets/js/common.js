@@ -42,3 +42,13 @@ function userLogout() {
     },
   });
 }
+window.onload = function () {
+  if (flashMessages && Array.isArray(flashMessages)) {
+    flashMessages.forEach(function (flashMessage) {
+      var category = flashMessage[0]; // The first item is the category
+      var message = flashMessage[1]; // The second item is the message
+      showToast(message, category);
+    });
+  }
+  console.log("Page fully loaded");
+};

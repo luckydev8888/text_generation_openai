@@ -383,12 +383,8 @@ def fine_tuning_upload():
 import smtplib
 def send_email_via_smtp(email, message):
     
-    # creates SMTP session
     s = smtplib.SMTP('smtp.gmail.com', 587)
-    # start TLS for security
     s.starttls()
-    # Authentication
-    # s.login("mailer@theastralabs.com", "oxgvjlpoxhpzfvoq")
     
     MESSAGE_SENDER = str(os.getenv('MESSAGE_SENDER'))
     MESSAGE_SENDER_APP_PASSWORD = str(os.getenv('MESSAGE_SENDER_APP_PASSWORD'))
