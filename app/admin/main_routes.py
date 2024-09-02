@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, make_response, session
 from functools import wraps
 import jwt
 import datetime
@@ -52,13 +52,28 @@ def login_required(f):
         new_token = create_token(email)
         response = make_response(f(current_user, *args, **kwargs))
         response.set_cookie('admin_token', new_token, httponly=True)
+        session['admin_info'] = current_user['email']
         return response
     return decorated
 
 @main_bp.route('/', methods=['GET'])
-@login_required
-def admin_first(current_user):
-    return redirect(url_for('admin.constdf.constdf'))
+def admin_first():
+    token = request.cookies.get('user_token')
+    if not token:
+        return redirect(url_for('admin.main.login'))
+    try:
+        data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
+        email = data['email']
+        
+        db = get_db()
+        users_collection = db['users']
+        current_user = users_collection.find_one({'email': email, 'type': 'admin'})
+        if not current_user:
+            return redirect(url_for('admin.main.login'))
+        return redirect(url_for('admin.constdf.constdf'))
+    except Exception as e:
+        return redirect(url_for('admin.main.login'))
+    
 
 @main_bp.route('login', methods=['GET'])
 def login():
@@ -91,6 +106,7 @@ def login_admin_user():
         
         response = jsonify({'message': 'Login successfully'})
         response.set_cookie('admin_token', token, httponly=True)
+        session['admin_info'] = user['email']
         return response
 
 @main_bp.route('logout', methods=['GET', 'POST'])

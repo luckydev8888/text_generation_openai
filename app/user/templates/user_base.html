@@ -84,9 +84,21 @@
           <ul>
             {% if user %}
             <li><a href="/tutela">Tutela</a></li>
-            <li><a href="" id="user_logout">Log out</a></li>
+            <li class="dropdown">
+              <a href=""
+                ><span class="text-primary">{{user['given_name']}} {{user.family_name}}</span>
+                <i class="bi bi-chevron-down toggle-dropdown"></i
+              ></a>
+              <ul class="w-100">
+                <li><a href="">Profile</a></li>
+                <hr style="margin: 0"/>
+                <li><a href="" id="user_logout">Log out</a></li>
+              </ul>
+            </li>
+            </li>
             {% else %}
-            <li><a href="login">Login</a></li>
+            <li><a href="/login">Login</a></li>
+            <li><a class="text-danger" href="/register">Register</a></li>
             {% endif %}
           </ul>
           <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>

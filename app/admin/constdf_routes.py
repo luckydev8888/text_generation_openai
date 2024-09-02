@@ -1,4 +1,4 @@
-from flask import render_template, request, Blueprint, jsonify
+from flask import render_template, request, Blueprint, jsonify, session, redirect, url_for
 from app.admin.script.const import get_const, add_const, update_const, delete_const, update_constdf_csv, get_constdf_text
 from app.admin.main_routes import login_required
 from werkzeug.utils import secure_filename
@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 
 from openai import OpenAI
-from app.mongo import get_db
+from app.mongo import get_db, get_user_info
 from bson import ObjectId
 
 load_dotenv()
@@ -19,14 +19,17 @@ file_path = ""
 constdf_bp = Blueprint('constdf', __name__, url_prefix="constdf")
 # constdf page
 @constdf_bp.route('/')
-@login_required
-def constdf(current_user):
+def constdf():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
+    current_user = get_user_info(session['admin_info'], 'admin')
     return render_template('constdf.html', user=current_user)
 
 
 @constdf_bp.route('/get', methods=['POST'])
-@login_required
-def constdf_get(current_user):
+def constdf_get():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         keyword = request.form.get('search[value]')
         start = request.form.get('start')
@@ -36,8 +39,9 @@ def constdf_get(current_user):
         return get_const(keyword, int(start), int(length), int(sortColumn), dir)
 
 @constdf_bp.route('/save', methods=['POST'])
-@login_required
-def constdf_save(current_user):
+def constdf_save():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
         type = request.form.get('type')
@@ -51,16 +55,18 @@ def constdf_save(current_user):
             return update_const(id, type, number, texto, tutela)
 
 @constdf_bp.route('/delete', methods=['POST'])
-@login_required
-def constdf_delete(current_user):
+def constdf_delete():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
         
         return delete_const(id)
     
 @constdf_bp.route('/uploadconstdfcsv', methods=['POST'])
-@login_required
-def constdf_upload_constdf_csv(current_user):
+def constdf_upload_constdf_csv():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         if 'constdf_csv_file' not in request.files:
             return jsonify("no file"), 400
@@ -83,23 +89,26 @@ def constdf_upload_constdf_csv(current_user):
         return jsonify(response), 200
     
 @constdf_bp.route('/updateconstdf', methods=['POST'])
-@login_required
-def constdf_update_csv(current_user):
+def constdf_update_csv():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
 
         return update_constdf_csv(file_path)
         
         
 @constdf_bp.route('/uploadconstdfdelete', methods=['POST'])
-@login_required
-def constdf_delete_csv(current_user):
+def constdf_delete_csv():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         if os.path.exists(file_path):
             os.remove(file_path)
 
 @constdf_bp.route('/upload2openaiconstdf', methods=['POST'])
-@login_required
-def constdf_upload_openai(current_user):
+def constdf_upload_openai():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         constdf_txt = get_constdf_text()
         constdf_path = os.path.join(UPLOAD_FOLDER, 'ConstDf.txt')

@@ -4,7 +4,8 @@ import datetime
 from .api.user import user_api_bp
 from .admin import admin_bp
 from .user import user_bp
-from .mongo import get_db, jwt
+from .mongo import get_db
+from .extension import jwt
 from .config import Config
 from .admin import page_not_found
 

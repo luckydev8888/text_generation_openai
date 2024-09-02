@@ -5,7 +5,8 @@ import jwt
 import datetime
 from functools import wraps
 from flask_bcrypt import Bcrypt
-from app.mongo import get_db, s
+from app.mongo import get_db
+from app.extension import s
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import os
@@ -134,7 +135,7 @@ def login_user():
             return jsonify({'message': 'Invalid username or password!'}), 401
         
         if user['verify'] == False:
-            return jsonify({'message': 'Verify your email to complete the process!'}), 401
+            return jsonify({'message': 'Email verification is needed to proceed.'}), 401
         
         token = jwt.encode({
                 'email': email,

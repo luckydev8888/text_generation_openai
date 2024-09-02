@@ -1,18 +1,22 @@
-from flask import render_template, request, Blueprint
+from flask import render_template, request, Blueprint, session, redirect, url_for
 from app.admin.script.sentencias import get_sentencias, get_sentencia, save_sentencias, delete_sentencias, texto_scrap
 from app.admin.main_routes import login_required
+from app.mongo import get_user_info
 
 sentencias_bp = Blueprint('sentencias', __name__, url_prefix="sentencias")
 # sentencias page
 @sentencias_bp.route('/')
-@login_required
-def sentencias(current_user):
+def sentencias():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
+    current_user = get_user_info(session['admin_info'], 'admin')
     return render_template('sentencias.html', user=current_user)
 
 
 @sentencias_bp.route('/get', methods=['POST'])
-@login_required
-def sentencias_get(current_user):
+def sentencias_get():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         keyword = request.form.get('search[value]')
         start = request.form.get('start')
@@ -22,16 +26,18 @@ def sentencias_get(current_user):
         return get_sentencias(keyword, int(start), int(length), int(sortColumn), dir)
 
 @sentencias_bp.route('/get/sentencia', methods=['POST'])
-@login_required
-def sentencia_get(current_user):
+def sentencia_get():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
         return get_sentencia(id)
 
 
 @sentencias_bp.route('/save', methods=['POST'])
-@login_required
-def sentencias_save(current_user):
+def sentencias_save():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         save_data = {
             "id": request.form.get('id'),
@@ -50,16 +56,18 @@ def sentencias_save(current_user):
         return save_sentencias(save_data)
 
 @sentencias_bp.route('/delete', methods=['POST'])
-@login_required
-def sentencias_delete(current_user):
+def sentencias_delete():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         id = request.form.get('id')
         
         return delete_sentencias(id)
 
 @sentencias_bp.route('/scrap', methods=['POST'])
-@login_required
-def sentencias_texto_scrap(current_user):
+def sentencias_texto_scrap():
+    if 'admin_info' not in session:
+        return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
         url = request.form.get('url')
         

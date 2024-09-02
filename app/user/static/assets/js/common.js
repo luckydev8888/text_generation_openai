@@ -34,11 +34,9 @@ function userLogout() {
     method: "POST",
     url: "/logout",
     success: function (response) {
-      // Handle success (e.g., redirect to a login page or show a message)
       window.location.href = url;
     },
     error: function (error) {
-      // Handle error (e.g., show an error message to the user)
       console.error("Logout failed:", error);
       alert("An error occurred while logging out. Please try again.");
     },
