@@ -93,7 +93,7 @@ def constdf_update_csv():
     if check_login_admin():
         return redirect(url_for('admin.main.login'))
     if request.method == 'POST':
-
+        print(file_path)
         return update_constdf_csv(file_path)
         
         

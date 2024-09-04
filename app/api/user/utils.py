@@ -6,6 +6,9 @@ import PyPDF2
 import json
 from datetime import datetime
 from app.mongo import get_db
+from docx.shared import Pt
+from docx.oxml.shared import OxmlElement
+from docx.oxml.ns import qn
 
 
 def get_pdf_text(pdf_path):
@@ -47,12 +50,93 @@ def html_to_text(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     return soup.get_text()
 
+def add_html_to_docx(soup, doc):
+    for element in soup:
+        if element == '\n':
+            continue
+        if element.name == 'p':
+            paragraph = doc.add_paragraph(element.get_text())
+            run = paragraph.runs[0]
+            run.font.size = Pt(11.5)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'h1':
+            paragraph = doc.add_heading(level=1)
+            run = paragraph.add_run(element.get_text())
+            run.font.size = Pt(20)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'h2':
+            paragraph = doc.add_heading(level=2)
+            run = paragraph.add_run(element.get_text())
+            run.font.size = Pt(16)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'h3':
+            paragraph = doc.add_heading(level=3)
+            run = paragraph.add_run(element.get_text())
+            run.font.size = Pt(14)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'h4':
+            paragraph = doc.add_heading(level=3)
+            run = paragraph.add_run(element.get_text())
+            run.font.size = Pt(13)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'strong':
+            run = doc.add_paragraph().add_run(element.get_text())
+            paragraph_format = run.paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'em':
+            run = doc.add_paragraph().add_run(element.get_text())
+            run.italic = True
+            run.font.size = Pt(11.5)
+            paragraph_format = run.paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+        elif element.name == 'ul':
+            list_items = element.find_all('li')
+            for i, li in enumerate(list_items):
+                paragraph = doc.add_paragraph(li.get_text(), style='ListBullet')
+                run = paragraph.runs[0]
+                run.font.size = Pt(11.5)
+                paragraph_format = paragraph.paragraph_format
+                if i == 0:
+                    paragraph_format.space_before = Pt(6)
+                if i == len(list_items) - 1:
+                    paragraph_format.space_after = Pt(6)
+        elif element.name == 'ol':
+            list_items = element.find_all('li')
+            for i, li in enumerate(list_items):
+                paragraph = doc.add_paragraph(li.get_text(), style='ListNumber')
+                run = paragraph.runs[0]
+                run.font.size = Pt(11.5)
+                paragraph_format = paragraph.paragraph_format
+                if i == 0:
+                    paragraph_format.space_before = Pt(6)
+                if i == len(list_items) - 1:
+                    paragraph_format.space_after = Pt(6)
+                    
+        elif isinstance(element, str):
+            paragraph = doc.add_paragraph(element)
+            run = paragraph.runs[0]
+            run.font.size = Pt(11.5)
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.space_before = Pt(6)  # 0.5 line space before
+            paragraph_format.space_after = Pt(6)   # 0.5 line space after
+
 def create_docx_from_html(html_content, filename):
-    text_content = html_to_text(html_content)
-    
+    soup = BeautifulSoup(html_content, 'lxml')
+
     doc = Document()
-    
-    doc.add_paragraph(text_content)
+    add_html_to_docx(soup.body.contents, doc)
     
     doc.save(filename)
 

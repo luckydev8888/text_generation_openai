@@ -510,7 +510,7 @@ $(document).ready(function () {
   });
 
   $("#resultados_reload").on("click", function (event) {
-    ajax_resultados(true);
+    $("#submit_evidence").click();
   });
 
   // Save button

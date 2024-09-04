@@ -492,7 +492,7 @@ h6 {
 .preloader {
   position: fixed;
   inset: 0;
-  z-index: 999999;
+  z-index: 995;
   overflow: hidden;
   background: var(--background-color);
   transition: all 0.6s ease-out;
@@ -501,7 +501,7 @@ h6 {
 .preloader.sub {
   position: absolute;
   opacity: 0.8;
-  z-index: 99998;
+  z-index: 995;
 }
 
 .preloader:before {

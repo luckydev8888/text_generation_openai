@@ -32,15 +32,16 @@ def openAI_response(send_message, file_id = ""):
             ]
         )
     else :
+        attach = []
+        for each in file_id:
+            attach.append({ "file_id": each, "tools": [{"type": "file_search"}] })
         thread = client.beta.threads.create(
             messages=[
                 {
                     "role": "user",
                     "content": send_message,
                     # Attach the new file to the message.
-                    "attachments": [
-                        { "file_id": file_id, "tools": [{"type": "file_search"}] }
-                    ],
+                    "attachments": attach,
                 }
             ]
         )

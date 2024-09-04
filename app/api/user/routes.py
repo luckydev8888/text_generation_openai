@@ -4,6 +4,7 @@ import time
 import os
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+import re
 
 from . import user_api_bp
 from .script import openAI_response
@@ -25,8 +26,6 @@ def check_login_user():
         return True
     return False
 
-
-
 @user_api_bp.route('/pdf/<path:filename>')
 def pdf_serve_static(filename):
     if check_login_user():
@@ -46,6 +45,7 @@ def save_resultados():
     if check_login_user():
         return jsonify("no user"), 401
     content = request.form.get('content')
+    print(content)
     user = session['user_info']
     title = get_current_data_field(user, 'title')
     if title == '': 
@@ -282,20 +282,58 @@ def analysis_resultados():
         constitucion_text = ""
         for item in sentence_result:
             constitucion_text = f'{constitucion_text} , {item['providencia']}'
+
+        sample_docs = get_settings("sampleDoc_id")
+        result_message = """### REPÚBLICA DE COLOMBIA\n\n## JUZGADO [NOMBRE DEL JUZGADO]\n\n## [Ciudad, Fecha]\n\n## REFERENCIA: Acción de Tutela promovida por \n\n
+            """
+        for index, item in enumerate(sample_docs):
+            content = item['content']
         
-        send_message = f"""Nuevo documento: \"{pdf_content}\"
+            send_message = f"""Nuevo documento: \"{pdf_content}\"
 
-                Revisiones judiciales relevantes: \"{constitucion_text}\"
+                    Revisiones judiciales relevantes: \"{constitucion_text}\"
 
-                Disposiciones constitucionales relevantes para el documento: \"{articulo_result}\"
+                    Disposiciones constitucionales relevantes para el documento: \"{articulo_result}\"
 
-                Con base en el nuevo documento, la lista de revisiones judiciales relevantes (cuyo contenido está disponible en la tienda de vectores) y las disposiciones constitucionales proporcionadas, redacte una sentencia para el nuevo documento.
-                
-                Esta es la estructura del documento: "formato_respuesta_textanalizer.docx"
-                """
-        SAMPLE_ID = get_settings("sampleDoc_id")
-        result_message = openAI_response(send_message,SAMPLE_ID)
+                    Utilizando el nuevo documento, la lista de revisiones judiciales relevantes almacenadas en la base de datos vectorial y las disposiciones constitucionales proporcionadas, redacte las siguientes secciones para la sentencia:\"{content}\"
+                    
+                    El número de palabras debe ser de al menos 700.
 
+                    La estructura del documento y el archivo de salida estándar son los siguientes:
+                    """
+            
+            SAMPLE_ID = []
+            for doc in item['samples']:
+                send_message = send_message + f' "{doc['name']}"'
+                SAMPLE_ID.append(doc['file_id'])
+            text = openAI_response(send_message, SAMPLE_ID)
+            if index == 0:
+                pattern = r'\s*[#*]*\s*1. Síntesis de la sentencia'
+            elif index == 1:
+                pattern = r'\s*[#*]*\s*8. Procedencia de la acción de tutela'
+            elif index == 2:
+                pattern = r'\s*[#*]*\s*12. Consideraciones'
+    
+            print(text)
+            match = re.search(pattern, text)
+            if match:
+                cleaned_text = text[match.start():].strip()
+            else:
+                cleaned_text = text.strip()
+
+            horizontal_line_index = cleaned_text.find('---')
+            if horizontal_line_index != -1:
+                cleaned_text = cleaned_text[:horizontal_line_index].strip()
+            else:
+                cleaned_text = cleaned_text.strip()
+            
+            result_message = result_message + '\n\n' + cleaned_text
+        
+        if "[Nombre del Juez]" not in result_message:
+            result_message = result_message + "\n\n[Nombre del Juez]"
+        result_message = result_message + "Notas: \n\nRevisión de la jurisprudencia relevante: \n\n"
+        for item in sentence_result:
+            result_message = result_message + "\n\n" + item['providencia']
         update_current_state(user, 'resultados', result_message)
         
         response = {

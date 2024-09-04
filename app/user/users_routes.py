@@ -105,7 +105,7 @@ def home():
 @users_bp.route('/login')
 def login_page():
     token = request.cookies.get('user_token')
-    if token:
+    if token and 'user_info' in session:
         try:
             data = jwt.decode(token, current_app.config['FLASK_SECRET_KEY'], algorithms=["HS256"])
             db = get_db()
