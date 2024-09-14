@@ -11,7 +11,15 @@ To get started, you need to install the required Python packages.
 Open your terminal or command prompt and run the following command to install the necessary packages:
 
 for example,
+
 ```bash
-pip install flask python-dotenv openai bs4 python-docx
+pip install requests
 ```
 
+### 2. Run Tutela app
+
+Open your terminal or command prompt and run the following command to run the app:
+
+```bash
+python run.py
+```
