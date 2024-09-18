@@ -135,23 +135,50 @@ def analysis_pdf():
 def analysis_judgement():
     if check_login_user():
         return jsonify("no user"), 401
+    
     if request.method == 'POST':
         user = session['user_info']
+        
+        # Obtener el contenido del PDF y los resultados de artículos del usuario
         pdf_content = get_current_data_field(user, 'pdf_content')
         articulo_result = get_current_data_field(user, 'articulo_result')
+        sentencia_list = get_current_data_field(user, 'sentencia_list')
 
-        sentencia_list = get_sentencia(pdf_content, articulo_result)
-        update_current_state(user, 'sentencia_list', sentencia_list)
+        # Buscar sentencias relacionadas
         global sentence_result
+       
+        # Preparar el mensaje para OpenAI
+        #send_message = f"""El siguiente documento es el contenido del PDF: \"{pdf_content}\". 
+         #               Estas son las sentencias extraídas de MongoDB que podrían estar relacionadas con este documento: {sentencia_list}.
+          #              Su tarea es analizar estas sentencias y determinar cuáles son más relevantes en función de la idea principal, 
+           #             las palabras clave, los derechos constitucionales violados y las peticiones mencionadas en el PDF. 
+            #            Ordene las sentencias de mayor a menor coincidencia y, a partir de las 3 primeras, determine la posible respuesta a las peticiones del documento.
+             #           """
+        
+        # Reiniciar el tiempo de análisis
+       # global analysis_start_time
+        #during_time = time.time() - analysis_start_time
+        #if during_time < STAY_TIME:
+         #   time.sleep(STAY_TIME - during_time)
+        #analysis_start_time = time.time()
+       
+        #try:
+            # Enviar el mensaje con hasta 3 adjuntos
+         #   result_message = openAI_response(send_message)
+        #except openai.error.OpenAIError as e:
+         #   print(f"Error al enviar la solicitud a OpenAI: {str(e)}")
+          #  return jsonify({"error": "Error en el análisis con OpenAI"}), 500
 
-        sentence_result = find_setencia_list(sentencia_list)
-        update_current_state(user, 'sentence_result', sentence_result)
+        # Actualizar el estado con el resultado del análisis
+        #update_current_state(user, result_message)
 
+        # Crear la respuesta para el cliente
         response = {
             'message': sentence_result
         }
 
         return jsonify(response), 200
+
 
 @user_api_bp.route('/analysis_constitucion', methods=['POST'])
 def analysis_constitucion():
@@ -295,7 +322,9 @@ def analysis_resultados():
 
                     Disposiciones constitucionales relevantes para el documento: \"{articulo_result}\"
 
-                    Utilizando el nuevo documento, la lista de revisiones judiciales relevantes almacenadas en la base de datos vectorial y las disposiciones constitucionales proporcionadas, redacte las siguientes secciones para la sentencia:\"{content}\"
+                    estas son sentencias de la corte constitucional: \"{sentence_result}\", son respuestas a casos similares a \"{pdf_content}\", tienes que entender la relacion que hay entre los hechos, antecedentes, tramite procesal, la competencia, la procedencia de la acccion de tutela, la solucion de cada caso, el problema juridico con la decision y el resuelve, tenga en cuenta que todos los puntos de resuelve son las respuestas a las peticiones de "{pdf_content}\"
+
+                    Utilizando el nuevo documento, la lista de revisiones judiciales relevantes almacenadas en la base de datos vectorial, las disposiciones constitucionales proporcionadas, y el entendimiento de las relaciones de las sentencias con el resuelve y las peticiones, redacte las siguientes secciones para la sentencia:\"{content}\"
                     
                     El número de palabras debe ser de al menos 700.
 
@@ -408,4 +437,3 @@ def set_state():
 
         message, code = set_tutela(current_user, title)
         return jsonify(message), code
-    
