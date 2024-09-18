@@ -23,10 +23,6 @@ $(document).ready(function () {
   let is_upload;
   let is_stopped;
   var res_summer_element = document.getElementById("resultados_summernote");
-  // res_summer_element.summernote({
-  //     tabsize: 2,
-  //     height: 100
-  // });
 
   // Init variation
 
@@ -35,7 +31,7 @@ $(document).ready(function () {
       type: "POST",
       url: "/api/get/state",
       success: function (data) {
-        console.log(data);
+        console.log("page init => ", data);
         $("#tutela #title")[0].innerHTML = data?.title || "No title";
         $("#hole_pdf_viewer").attr(
           "src",
@@ -68,7 +64,7 @@ $(document).ready(function () {
         const evidenceKeys = data?.evidence_checklist || [];
         const evidenceListContainer = $("#evidence_list");
         evidenceListContainer.empty();
-        console.log(evidenceKeys);
+        console.log("evidenceKeys => ", evidenceKeys);
         var evidenceHtmlText = "";
         evidenceKeys.forEach((key, index) => {
           var evidenceItemText = `<div class="row mt-4"><h4>${index + 1}. ${
@@ -159,7 +155,7 @@ $(document).ready(function () {
         $("#pdf_viewer_preloader").show();
       },
       success: function (response) {
-        console.log(response);
+        console.log("pdf file uploaded => ", response);
         is_upload = true;
         const response_file = response.message;
         $("#hole_pdf_viewer").attr(
@@ -182,12 +178,13 @@ $(document).ready(function () {
   }
 
   function ajax_summary(is_reload) {
+    console.log("analyse button clicked ... ");
     return $.ajax({
       type: "POST",
       url: "/api/analysis_pdf",
       success: function (response) {
         $("#summary_preloader").hide();
-        console.log(response);
+        console.log("openAI response of pdf contents => ", response);
         $("#summary_text")[0].innerHTML = marked.parse(response.message);
 
         stopBtnRevert();
@@ -279,6 +276,7 @@ $(document).ready(function () {
   }
 
   function ajax_constitucion(is_reload) {
+    console.log("on going analysis constitution ...");
     return $.ajax({
       type: "POST",
       url: "/api/analysis_constitucion",
@@ -331,7 +329,7 @@ $(document).ready(function () {
         const evidenceListContainer = $("#evidence_list");
         evidenceListContainer.empty();
         const evidenceKeys = response.message;
-        console.log(evidenceKeys);
+        console.log("evidence keys => ", evidenceKeys);
         var evidenceHtmlText = "";
         evidenceKeys.forEach((key, index) => {
           var evidenceItemText = `<div><h4>${index + 1}. ${
