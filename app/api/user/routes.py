@@ -107,78 +107,307 @@ def uploadfile():
 
         return jsonify(response), 200
 
+def normalize_peticiones(peticiones):
+    """
+    Normaliza las peticiones eliminando prefijos de numeración (palabras, números, letras, viñetas),
+    y limpiando los textos para que puedan buscarse de manera coherente.
+    """
+    peticiones_normalizadas = []
+    for peticion in peticiones:
+        # Eliminar prefijos de numeración como "Primero", "1.", "a)", "•", etc.
+        peticion = re.sub(r'^\b(primero|segundo|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo|Las peticiones o solicitudes presentadas en el documento son|[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*', '', peticion, flags=re.IGNORECASE).strip()
+
+        # Dividir la petición usando puntos para separar ideas completas
+        sub_peticiones = re.split(r'[.]', peticion)
+        
+        def eliminar_guiones_inicio(sub_peticion):
+            return sub_peticion.lstrip("- ")
+        
+        # Limpiar cada sub-petición
+        for sub_peticion in sub_peticiones:
+            sub_peticion = re.sub(r'^\d+\.\s*', '', sub_peticion).strip()  # Eliminar números al inicio
+            sub_peticion = re.sub(r'[\W_]+$', '', sub_peticion).strip()  # Eliminar caracteres especiales al final
+            sub_peticion = re.sub(r'\s+', ' ', sub_peticion).strip()  # Unificar espacios múltiples
+            sub_peticion = eliminar_guiones_inicio(sub_peticion)
+
+            # Asegurarse de que la sub-petición no esté vacía y sea válida
+            if sub_peticion and len(sub_peticion) > 2:  # Evitar entradas cortas irrelevantes
+                peticiones_normalizadas.append(sub_peticion)
+    
+    return peticiones_normalizadas
+
+def normalize_derechos(derechos):
+    """
+    Normaliza las derechos eliminando prefijos de numeración (palabras, números, letras, viñetas),
+    y limpiando los textos para que puedan buscarse de manera coherente.
+    """
+    derechos_normalizados = []
+    for derecho in derechos:
+        # Eliminar prefijos de numeración como "Primero", "1.", "a)", etc.
+        derecho = re.sub(r'^\b(primero|segundo|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo|Los derechos fundamentales invocados en el documento son|[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*', '', derecho, flags=re.IGNORECASE).strip()
+
+        # Dividir la petición usando puntos para separar ideas completas
+        sub_derechos = re.split(r'[.]', derecho)
+        
+        def eliminar_guiones_inicio(sub_prueba):
+            return sub_prueba.lstrip("- ")
+        
+        # Limpiar cada sub-petición
+        for sub_derecho in sub_derechos:
+            sub_derecho = re.sub(r'^\d+\.\s*', '', sub_derecho).strip()  # Eliminar números al inicio
+            sub_derecho = re.sub(r'[\W_]+$', '', sub_derecho).strip()  # Eliminar caracteres especiales al final
+            sub_derecho = re.sub(r'\s+', ' ', sub_derecho).strip()  # Unificar espacios múltiples
+            sub_derecho = eliminar_guiones_inicio(sub_derecho)
+            # Asegurarse de que la sub-petición no esté vacía y sea válida
+            if sub_derecho and len(sub_derecho) > 2:  # Evitar entradas cortas irrelevantes
+                derechos_normalizados.append(sub_derecho)
+                
+    return derechos_normalizados
+
+def normalize_pruebas(pruebas):
+    """
+     Normaliza las pruebas eliminando prefijos de numeración (palabras, números, letras, viñetas),
+    y limpiando los textos para que puedan buscarse de manera coherente.
+    """
+    pruebas_normalizadas = []
+    for prueba in pruebas:
+        # Eliminar prefijos de numeración como "Primero", "1.", "a)", etc.
+        prueba = re.sub(r'^\b(primero|segundo|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo|Las pruebas o documentos adjuntos mencionados en el documento son|[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*', '', prueba, flags=re.IGNORECASE).strip()
+
+        # Dividir la petición usando puntos para separar ideas completas
+        sub_pruebas = re.split(r'[.]', prueba)
+        
+        def eliminar_guiones_inicio(sub_prueba):
+            return sub_prueba.lstrip("- ")
+        
+        # Limpiar cada sub-petición
+        for sub_prueba in sub_pruebas:
+            sub_prueba = re.sub(r'^\d+\.\s*', '', sub_prueba).strip()  # Eliminar números al inicio
+            sub_prueba = re.sub(r'[\W_]+$', '', sub_prueba).strip()  # Eliminar caracteres especiales al final
+            sub_prueba = re.sub(r'\s+', ' ', sub_prueba).strip()  # Unificar espacios múltiples
+            sub_prueba = eliminar_guiones_inicio(sub_prueba)
+
+            # Asegurarse de que la sub-petición no esté vacía y sea válida
+            if sub_prueba and len(sub_prueba) > 2:  # Evitar entradas cortas irrelevantes
+                pruebas_normalizadas.append(sub_prueba)
+    
+    return pruebas_normalizadas
+
+def normalize_hechos(hechos):
+    """
+    Normaliza los hechos relevantes eliminando prefijos de numeración (palabras, números, letras, viñetas),
+    y limpiando los textos para que puedan buscarse de manera coherente.
+    """
+    hechos_normalizados = []
+    
+    for hecho in hechos:
+        # Eliminar prefijos de numeración como "Primero", "1.", "a)", etc.
+        hecho = re.sub(r'^\b(primero|segundo|Documentales|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo|Los hechos principales mencionados en el documento son|[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*', '', hecho, flags=re.IGNORECASE).strip()
+
+       # Dividir la petición usando puntos para separar ideas completas
+        sub_hechos = re.split(r'[.]', hecho)
+        
+        def eliminar_guiones_inicio(sub_hecho):
+            return sub_hecho.lstrip("- ")
+        
+        # Limpiar cada sub-petición
+        for sub_hecho in sub_hechos:
+            sub_hecho = re.sub(r'^\d+\.\s*', '', sub_hecho).strip()  # Eliminar números al inicio
+            sub_hecho = re.sub(r'[\W_]+$', '', sub_hecho).strip()  # Eliminar caracteres especiales al final
+            sub_hecho = re.sub(r'\s+', ' ', sub_hecho).strip()  # Unificar espacios múltiples
+            sub_hecho = eliminar_guiones_inicio(sub_hecho)
+
+            # Asegurarse de que la sub-petición no esté vacía y sea válida
+            if sub_hecho and len(sub_hecho) > 2:  # Evitar entradas cortas irrelevantes
+                hechos_normalizados.append(sub_hecho)
+                
+    return hechos_normalizados
+
+def normalize_sentencias(sentencias):
+    """
+    Normaliza las sentencias eliminando prefijos de numeracion (palabras, viñeas, guiones, espacios al iniciar o finalizar),
+    y limpieando los textos para que puedan buscarse de manera coherente, una muestra del formato 'T-444-99', 'SU-509-01', 'A-001-00', 'C-014-00', etc.
+    """
+    sentencias_normalizadas = []
+    
+    for sentencia in sentencias:
+        # Eliminar prefijos innecesarios como 'Sentencia', '-', etc.
+        sentencia = re.sub(r'^\b(sentencia|Sentencia|\d+[\.\)]|•|-)\b[\s]*', '', sentencia, flags=re.IGNORECASE).strip()
+        
+        # Dividir la petición usando puntos para separar ideas completas
+        sub_sentencias = re.split(r'[.]', sentencia)
+        
+        def reemplazar_slash_por_guion(sub_sentencia):
+            return sub_sentencia.replace("/", "-")
+        
+        def eliminar_palabra_sentencia(sub_sentencia):
+            return sub_sentencia.replace("Sentencia ", "", 1)
+        
+        def eliminar_guiones_inicio(sub_sentencia):
+            return sub_sentencia.lstrip("- ")
+        
+        sub_sentencias = [
+            "Sentencia T-444/99",
+            "- Sentencia T-555/00",
+            "Sentencia T-666/01"
+        ]
+        
+        # Limpiar cada sub-petición
+        for sub_sentencia in sub_sentencias:
+            sub_sentencia = re.sub(r'^\d+\.\s*', '', sub_sentencia).strip()  # Eliminar números al inicio
+            sub_sentencia = re.sub(r'[\W_]+$', '', sub_sentencia).strip()  # Eliminar caracteres especiales al final
+            sub_sentencia = re.sub(r'\s+', ' ', sub_sentencia).strip()  # Unificar espacios múltiples
+            sub_sentencia = eliminar_palabra_sentencia(sub_sentencia)
+            sub_sentencia = eliminar_guiones_inicio(sub_sentencia)
+            sub_sentencia = reemplazar_slash_por_guion(sub_sentencia)
+            
+            # Asegurarse de que la sub-petición no esté vacía y sea válida
+            if sub_sentencia and len(sub_sentencia) > 2:  # Evitar entradas cortas irrelevantes
+                sentencias_normalizadas.append(sub_sentencia)
+    
+    return sentencias_normalizadas
+
+
 @user_api_bp.route('/analysis_pdf', methods=['POST'])
 def analysis_pdf():
     if check_login_user():
         return jsonify("no user"), 401
     if request.method == 'POST':
         user = session['user_info']
+        
+        # Tiempo de espera antes del análisis, si es necesario
         global analysis_start_time
         during_time = time.time() - analysis_start_time
-        if during_time < STAY_TIME: time.sleep(STAY_TIME - during_time)
+        if during_time < STAY_TIME:
+            time.sleep(STAY_TIME - during_time)
         
+        # Obtener el contenido PDF desde el estado del usuario
         pdf_content = get_current_data_field(user, 'pdf_content')
-        send_message = f'Este es el contenido del documento: \"{pdf_content}\". Resumir este documento'
+        if not pdf_content:
+            return jsonify({"error": "No se encontró el contenido del PDF"}), 400
+        
+        print(f"Contenido del PDF procesado: {pdf_content}")
 
+        # Crear el mensaje para OpenAI solicitando los datos dinámicos
+        send_message = f"""
+        A continuación se presenta el contenido de un documento legal. Por favor, extrae la siguiente información:
+        
+        1. Derechos Fundamentales Invocados: Enumera todos los derechos fundamentales que se mencionan o invocan en el documento.
+        2. Hechos Relevantes: Resume los hechos principales que se mencionan en el documento.
+        3. Peticiones: Enumera las peticiones o solicitudes que se presentan en el documento.
+        4. Pruebas Adjuntas: Enumera las pruebas o documentos adjuntos que se mencionan para respaldar las peticiones o hechos.
+        5. Sentencias: Liste el codigo de las sentencias presentes en el documento.
+
+        Este es el contenido del documento:
+        {pdf_content}
+        """
+        
+        # Llamada a OpenAI para procesar el contenido del PDF
         result_message = openAI_response(send_message)
+        
+        if not result_message:
+            return jsonify({"error": "Error en la respuesta de OpenAI"}), 500
 
+        # Extraer secciones de la respuesta de OpenAI
+        derechos_fundamentales_invocados = extract_section(result_message, "Derechos Fundamentales Invocados")
+        hechos_relevantes = extract_section(result_message, "Hechos Relevantes")
+        peticiones = extract_section(result_message, "Peticiones")
+        pruebas_adjuntas = extract_section(result_message, "Pruebas Adjuntas")
+        sentencias_adjuntas = extract_section(result_message, "Sentencias")
+
+        # Normalizar sentencias, derechos, peticiones, y demás secciones
+        pruebas_adjuntas = normalize_pruebas(pruebas_adjuntas)
+        hechos_relevantes = normalize_hechos(hechos_relevantes)
+        derechos_fundamentales_invocados = normalize_derechos(derechos_fundamentales_invocados)
+        peticiones = normalize_peticiones(peticiones)
+        sentencias_adjuntas = normalize_sentencias(sentencias_adjuntas)
+
+        # Verificación de los resultados extraídos
+        print(f"Derechos Fundamentales (antes de guardar en session): {derechos_fundamentales_invocados}")
+        print(f"Hechos Relevantes (antes de guardar en session): {hechos_relevantes}")
+        print(f"Peticiones (antes de guardar en session): {peticiones}")
+        print(f"Pruebas Adjuntas (antes de guardar en session): {pruebas_adjuntas}")
+        print(f"Sentencias Adjuntas (antes de guardar en session): {sentencias_adjuntas}")
+
+        # Guardar los resultados extraídos en la sesión para acceder desde otros puntos
+        session['derechos_fundamentales_invocados'] = derechos_fundamentales_invocados
+        session['peticiones'] = peticiones
+        session['pruebas_adjuntas'] = pruebas_adjuntas
+        session['hechos_relevantes'] = hechos_relevantes
+        session['sentencias_adjuntas'] = sentencias_adjuntas
+
+        # Actualizar el estado del usuario con el resumen del documento
         update_current_state(user, 'pdf_resume', result_message)
 
+        # Preparar la respuesta para enviar al frontend
         response = {
             'message': result_message
         }
+        
+        # Actualizar el tiempo de análisis
         analysis_start_time = time.time()
 
         return jsonify(response), 200
+
+
+def extract_section(text, section_title):
+    """
+    Función auxiliar que busca una sección en el texto devuelto por OpenAI.
+    Extrae la información basada en el título de la sección especificada.
+    """
+    section_start = text.find(section_title)
+    if section_start == -1:
+        return []
     
+    section_end = text.find('\n\n', section_start)
+    if section_end == -1:
+        section_end = len(text)
+    
+    section_content = text[section_start:section_end].split('\n')[1:]  # Ignorar el título
+    return [item.strip() for item in section_content if item.strip()]
+        
 @user_api_bp.route('/analysis_judgement', methods=['POST'])
 def analysis_judgement():
     if check_login_user():
         return jsonify("no user"), 401
-    
     if request.method == 'POST':
         user = session['user_info']
         
-        # Obtener el contenido del PDF y los resultados de artículos del usuario
-        pdf_content = get_current_data_field(user, 'pdf_content')
-        articulo_result = get_current_data_field(user, 'articulo_result')
-        sentencia_list = get_current_data_field(user, 'sentencia_list')
-
-        # Buscar sentencias relacionadas
-        global sentence_result
-       
-        # Preparar el mensaje para OpenAI
-        #send_message = f"""El siguiente documento es el contenido del PDF: \"{pdf_content}\". 
-         #               Estas son las sentencias extraídas de MongoDB que podrían estar relacionadas con este documento: {sentencia_list}.
-          #              Su tarea es analizar estas sentencias y determinar cuáles son más relevantes en función de la idea principal, 
-           #             las palabras clave, los derechos constitucionales violados y las peticiones mencionadas en el PDF. 
-            #            Ordene las sentencias de mayor a menor coincidencia y, a partir de las 3 primeras, determine la posible respuesta a las peticiones del documento.
-             #           """
+        # Cambiar 'pdf_resumen' a 'pdf_resume' porque así se guarda en analysis_pdf
+        pdf_resume = get_current_data_field(user, 'pdf_resume')  # Aquí usamos el nombre correcto
+        if not pdf_resume:
+            return jsonify({"error": "No se encontró el resumen del PDF"}), 400
         
-        # Reiniciar el tiempo de análisis
-       # global analysis_start_time
-        #during_time = time.time() - analysis_start_time
-        #if during_time < STAY_TIME:
-         #   time.sleep(STAY_TIME - during_time)
-        #analysis_start_time = time.time()
+        # Obtener derechos fundamentales, peticiones y sentencias desde la sesión
+        TutelaDerecTemp = session.get('derechos_fundamentales_invocados', []) 
+        TutelaPetTemp = session.get('peticiones', [])  # Obtener las peticiones
+        TutelaSentTemp = session.get('sentencias_adjuntas', [])
+                
+        print("Iniciando la función analysis_judgement...")
+        
+        # Verificar el formato de TutelaSentTemp, TutelaDerecTemp y TutelaPetTemp
+        print(f"TutelaSentTemp (después de cargar de sesión): {TutelaSentTemp}")
+        print(f"Tipo de TutelaSentTemp: {type(TutelaSentTemp)}")
        
-        #try:
-            # Enviar el mensaje con hasta 3 adjuntos
-         #   result_message = openAI_response(send_message)
-        #except openai.error.OpenAIError as e:
-         #   print(f"Error al enviar la solicitud a OpenAI: {str(e)}")
-          #  return jsonify({"error": "Error en el análisis con OpenAI"}), 500
-
-        # Actualizar el estado con el resultado del análisis
-        #update_current_state(user, result_message)
-
-        # Crear la respuesta para el cliente
+        print(f"TutelaDerecTemp (después de cargar de sesión): {TutelaDerecTemp}")
+        print(f"Tipo de TutelaDerecTemp: {type(TutelaDerecTemp)}") # Verificar el formato de TutelaSentTemp
+        
+        print(f"TutelaPetTemp (después de cargar de sesión): {TutelaPetTemp}")
+        print(f"Tipo de TutelaPetTemp: {type(TutelaPetTemp)}")
+        
+        # Usar pdf_resume en lugar de pdf_resumen para obtener las sentencias
+        sentencia_list = get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp) #aqui va pdf_resume en el futuro
+        update_current_state(user, 'sentencia_list', sentencia_list)  
+        
+        global sentence_result
+        sentence_result = find_setencia_list(sentencia_list)  # Procesa sentencia_list para obtener sentence_result
+        update_current_state(user, 'sentence_result', sentence_result)
+       
         response = {
             'message': sentence_result
         }
-
+        print("Finalizando la función analysis_judgement...")
         return jsonify(response), 200
-
 
 @user_api_bp.route('/analysis_constitucion', methods=['POST'])
 def analysis_constitucion():

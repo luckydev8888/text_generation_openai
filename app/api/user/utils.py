@@ -184,63 +184,247 @@ def es_similar(texto1, texto2):
     return SequenceMatcher(None, texto1, texto2).ratio()
 
 
-def get_sentencia(str, constitution_list):
-    str = str.lower()
+def buscar_patrones_en_texto(TutelaSentTemp):
+    print(
+        f"TutelaSentTemp contiene {len(TutelaSentTemp)} elementos para análisis de sentencias adjuntas"
+    )
 
-    # Obtener la base de datos MongoDB usando get_db
+    # Verificar que TutelaSentTemp sea una lista válida
+    if not isinstance(TutelaSentTemp, list) or not TutelaSentTemp:
+        print("Error: TutelaSentTemp no es una lista válida o está vacía.")
+        return []
+
+    # Inicializar la lista de sentencias coincidentes
+    salida1 = []
+
+    # Conectar a la base de datos MongoDB
+    db = get_db()
+    collection = db["sentenciasOld"]
+
+    # Iterar sobre cada sentencia en TutelaSentTemp
+    for sentencia_adjunta in TutelaSentTemp:
+        sentencia_adjunta_normalizada = (
+            re.sub(r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", sentencia_adjunta).lower().strip()
+        )
+
+        # Iterar sobre los documentos de la base de datos para buscar coincidencias con 'providencia'
+        for doc in collection.find():
+            providencia_db = doc["providencia"].lower().strip()
+
+            # Normalizar el formato de 'providencia' en la base de datos (ej: 'T-310/24' a 'T-310-24')
+            providencia_db_normalizada = re.sub(
+                r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", providencia_db
+            )
+
+            # Comparar la sentencia de la base de datos con la sentencia adjunta normalizada
+            if sentencia_adjunta_normalizada == providencia_db_normalizada:
+                print(
+                    f"Coincidencia encontrada: '{sentencia_adjunta_normalizada}' en documento ID: {doc['_id']}"
+                )
+                salida1.append(providencia_db_normalizada)
+
+    print(f"Total de coincidencias encontradas salida1: {len(salida1)}")
+    return salida1
+
+
+def buscar_derechos_en_mongo(TutelaDerecTemp, salida1, limitar_busqueda=True):
+    print(
+        "TutelaDerecTemp contiene",
+        len(TutelaDerecTemp),
+        "elementos como entrada analisis derechos",
+    )
+    for i, derecho in enumerate(TutelaDerecTemp):
+        print(f"Petición {i + 1}: {derecho}")
+
+    # Verificar si hay derechos fundamentales invocados
+    if not TutelaDerecTemp:
+        print(
+            "Error: No se encontraron los datos de derechos fundamentales invocados en la sesión."
+        )
+        return salida1, []
+
+    # Imprimir el número de derechos fundamentales
+    print(
+        f"TutelaDerecTemp contiene {len(TutelaDerecTemp)} elementos para análisis en MongoDB"
+    )
+
+    # Inicializar la lista de documentos coincidentes
+    SentDerecTempFiles = []
+
+    # Conectar a la base de datos MongoDB
     db = get_db()
     collection = db["sentencias"]
 
-    # Patrón para identificar sentencias en el texto
-    pattern = r"(?i)(providencia|jurisprudencia|sentencia)[^a-zA-Z0-9]*([A-Za-z]*-?\d+[a-zA-Z]*[^a-zA-Z0-9]*(?:de[^a-zA-Z0-9]*)?\d{2,4})"
+    # Iterar sobre los documentos de la colección 'sentencias'
+    for doc in collection.find():
+        if "derechos" in doc and isinstance(
+            doc["derechos"], list
+        ):  # Verificar que el campo 'derechos' es una lista
+            derechos_db = [derecho.lower().strip() for derecho in doc["derechos"]]
+            print(
+                f"Verificando derechos en documento ID: {doc['_id']} con derechos: {derechos_db}"
+            )
 
-    sentencia = re.findall(pattern, str, re.IGNORECASE)
+            # Normalizar los derechos de MongoDB (eliminar caracteres especiales, limpiar guiones, etc.)
+            derechos_db_normalizados = [
+                re.sub(r"[\W_]+$", "", d.replace("-", "").strip().lower())
+                for d in derechos_db
+            ]
+            print(f"Derechos en documento (normalizados): {derechos_db_normalizados}")
 
-    sentencia_list = []
+            coincidencias_derechos = 0  # Contador de coincidencias de derechos
 
-    # Si se encuentran sentencias en el texto
-    if sentencia:
-        for match in sentencia:
-            code = proccess_code(match[1])
-            sentencia_list.append(code.upper())
+            # Verificar coincidencias exactas y parciales entre los derechos de MongoDB y los invocados en TutelaDerecTemp
+            for derecho_invocado in TutelaDerecTemp:
+                derecho_invocado_normalizado = re.sub(
+                    r"[\W_]+$", "", derecho_invocado.replace("-", "").strip().lower()
+                )
 
-        # Eliminar duplicados de sentencia_list
-        sentencia_list = list(set(sentencia_list))
+                # Comparar cada derecho invocado con los derechos de la base de datos
+                if derecho_invocado_normalizado in derechos_db_normalizados:
+                    coincidencias_derechos += 1
+                    print(
+                        f"Coincidencia exacta encontrada para '{derecho_invocado_normalizado}' en documento ID: {doc['_id']}"
+                    )
 
-    # Nueva funcionalidad: búsqueda en MongoDB por palabras clave, derechos vulnerados y peticiones
-    palabras_clave = re.findall(r"\b\w+\b", str)  # Extraer palabras clave del documento
+                # Comparar similitud parcial
+                for derecho_db in derechos_db_normalizados:
+                    similitud = es_similar(derecho_invocado_normalizado, derecho_db)
+                    if similitud > 0.6:
+                        coincidencias_derechos += 1
+                        print(
+                            f"Similitud alta encontrada entre '{derecho_invocado_normalizado}' y '{derecho_db}' en documento ID: {doc['_id']} (Similitud: {similitud})"
+                        )
 
-    # Búsqueda adicional en MongoDB con base en palabras clave en toda la colección de sentencias
-    for doc in collection.find():  # Recorrer toda la colección de MongoDB
-        coincidencias = 0
-        if "texto" in doc:
-            for palabra in palabras_clave:
-                if palabra in doc["texto"].lower():
-                    coincidencias += 1
-        if coincidencias > 0:
-            sentencia_list.append(doc["providencia"])
+            # Si hay coincidencias, añadir el documento a SentDerecTempFiles
+            if coincidencias_derechos > 0:
+                SentDerecTempFiles.append((doc["_id"], coincidencias_derechos))
+                print(
+                    f"Total de coincidencias de derechos para documento ID {doc['_id']}: {coincidencias_derechos}"
+                )
 
-    # Eliminar duplicados de sentencia_list
-    sentencia_list = list(set(sentencia_list))
+    # salida2 será el resultado de agregar los documentos encontrados a salida1
+    salida2 = salida1  # Partimos de la lista de salida1
+    for doc_id, _ in SentDerecTempFiles:
+        doc = collection.find_one({"_id": doc_id})
+        if doc and doc.get("providencia"):
+            salida2.append(
+                doc["providencia"]
+            )  # Agregar la providencia a la lista de salida2
 
-    # Ordenar las sentencias por similitud con el documento PDF (str)
-    sentencias_similares = []
-    for sentencia in sentencia_list:
-        doc = collection.find_one({"providencia": sentencia})
-        # Asegurarse de que el campo 'texto' exista antes de acceder a él
-        if doc and "texto" in doc:
-            similitud = es_similar(str, doc.get("texto", "").lower())
-            sentencias_similares.append((sentencia, similitud))
+    return salida2, SentDerecTempFiles
 
-    # Ordenar por similitud de mayor a menor
-    sentencias_similares = sorted(
-        sentencias_similares, key=lambda x: x[1], reverse=True
+
+def buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp):
+    print(
+        "TutelaPetTemp contiene",
+        len(TutelaPetTemp),
+        "elementos como entrada analisis id´s",
+    )
+    for i, peticion in enumerate(TutelaPetTemp):
+        print(f"Petición {i + 1}: {peticion}")
+
+    # Inicializar salida3 para evitar errores si no se encuentran coincidencias
+    salida3 = (
+        salida2  # Si no se encuentran coincidencias, salida3 debe ser igual a salida2
     )
 
-    # Limitar las sentencias a las 3 más relevantes
-    sentencia_list = [sentencia[0] for sentencia in sentencias_similares[:3]]
+    # Verificar si hay peticiones
+    if not TutelaPetTemp:
+        print("Error: No se encontraron las peticiones.")
+        return salida3
 
-    print(f"Sentencias relevantes: {sentencia_list}")
+    db = get_db()
+    collection = db["sentencias"]
+
+    SentPetTempFiles = []
+
+    # Recorrer los IDs obtenidos en SentDerecTempFiles
+    for doc_id, _ in SentDerecTempFiles:
+        doc = collection.find_one({"_id": doc_id})
+        if doc:
+            texto = doc["texto"].lower()  # Texto completo del documento
+            coincidencias_peticiones = 0
+
+            print(f"Analizando documento con ID {doc_id}")
+
+            # Comparar las peticiones con el texto del documento (similitud flexible)
+            for peticion in TutelaPetTemp:
+                peticion_normalizada = peticion.lower().strip()
+
+                # Coincidencia directa
+                if peticion_normalizada in texto:
+                    coincidencias_peticiones += 1
+                    print(
+                        f"Coincidencia directa para petición: '{peticion_normalizada}' en documento ID: {doc_id}"
+                    )
+
+                # Coincidencia parcial utilizando similitud
+                oraciones_documento = re.split(r"[.!?]", texto)
+                for oracion in oraciones_documento:
+                    similitud = es_similar(peticion_normalizada, oracion.strip())
+                    if similitud > 0.65:  # Umbral de similitud flexible
+                        coincidencias_peticiones += 1
+                        print(
+                            f"Similitud entre '{peticion}' y '{oracion[:50]}...' en documento ID: {doc_id}, Similitud: {similitud}"
+                        )
+
+            if coincidencias_peticiones > 0:
+                SentPetTempFiles.append((doc, coincidencias_peticiones))
+
+    if SentPetTempFiles:
+        SentPetTempFiles = sorted(SentPetTempFiles, key=lambda x: x[1], reverse=True)[
+            :5
+        ]
+        # Agregar los documentos con coincidencias a la lista final de sentencias
+        salida3 = salida2 + [doc["providencia"] for doc, _ in SentPetTempFiles]
+
+    return salida3
+
+
+# habilita los siguiente codigos si quieres limitar la busqueda
+# def get_sentencia(str, limitar_busqueda=True):  # Procesa solo 100 documentos
+# Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
+# sentencia_list, SentDerecTempFiles = buscar_derechos_en_mongo(sentencia_list, limitar_busqueda)
+
+# habilita los siguiente codigos si NO quieres limitar la busqueda
+# def get_sentencia(str, limitar_busqueda=False):  # Procesa todos los documentos
+# Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
+# sentencia_list, SentDerecTempFiles = buscar_derechos_en_mongo(sentencia_list, limitar_busqueda=False)
+
+
+def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
+    print("Iniciando get_sentencia...")
+    print(f"TutelaDerecTemp: {TutelaDerecTemp}")
+    print(f"TutelaPetTemp: {TutelaPetTemp}")
+    print(f"TutelaSentTemp: {TutelaSentTemp}")
+
+    # Parte 1: Búsqueda de patrones en el texto (pattern matching)
+    salida1 = buscar_patrones_en_texto(TutelaSentTemp)
+    print(f"Resultados de buscar_patrones_en_texto: {salida1}")
+
+    # Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
+    salida2, SentDerecTempFiles = buscar_derechos_en_mongo(TutelaDerecTemp, salida1)
+    print(
+        f"Resultados de buscar_derechos_en_mongo: Salida2: {salida2}, SentDerecTempFiles: {SentDerecTempFiles}"
+    )
+
+    # Parte 3: Búsqueda en Mongo de los IDs obtenidos y matching con TutelaPetTemp
+    salida3 = buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp)
+    print(f"Resultados de buscar_peticiones_con_ids: {salida3}")
+
+    # Combinar las salidas sin duplicar elementos
+    sentencia_list = []
+    for salida in [salida1, salida2, salida3]:
+        for item in salida:
+            if item not in sentencia_list:
+                sentencia_list.append(item)
+
+    # Imprimir sentencia_list para asegurar que los resultados son correctos
+    print(
+        f"Sentencia list final (combinación de salida1, salida2 y salida3 sin duplicados): {sentencia_list}"
+    )
+
     return sentencia_list
 
 
