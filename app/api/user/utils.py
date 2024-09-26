@@ -9,13 +9,9 @@ from app.mongo import get_db
 from docx.shared import Pt
 from docx.oxml.shared import OxmlElement
 from docx.oxml.ns import qn
-from pymongo import MongoClient
 from difflib import SequenceMatcher
-
-# Conectar a la base de datos MongoDB
-client = MongoClient("mongodb://localhost:27017/")
-db = client["tutela_db"]
-coleccion = db["sentencias"]
+from flask import session
+from unidecode import unidecode
 
 
 def get_pdf_text(pdf_path):
@@ -43,12 +39,12 @@ def find_setencia_list(list):
             json_data.append(
                 {
                     "providencia": doc["providencia"],
-                    "tipo": doc["tipo"],
-                    "ano": doc["ano"],
+                    #'tipo': doc['tipo'],
+                    #'ano': doc['ano'],
                     "fecha_sentencia": doc["fecha_sentencia"],
-                    "tema": doc["tema"],
+                    "derechos": doc["derechos"],  # se cambio 'derechos' por 'derechos'
                     "magistrado": doc["magistrado"],
-                    "fecha_publicada": doc["fecha_publicada"],
+                    #'fecha_publicada': doc['fecha_publicada'],
                     "expediente": doc["expediente"],
                     "url": doc["url"],
                 }
@@ -162,16 +158,19 @@ def get_constitution(str):
 
 
 def proccess_code(codigo):
+    # Eliminar acentos y convertir a minúsculas
+    codigo = unidecode(codigo.lower())
+
     codigo = re.sub(
         r"[^A-Za-z0-9]", "-", codigo
-    )  # Replace non-alphanumeric characters with hyphens
-    codigo = re.sub(r"de-", "-", codigo)  # Remove 'de-' followed by a hyphen
+    )  # Reemplazar caracteres no alfanuméricos por guiones
+    codigo = re.sub(r"de-", "-", codigo)  # Eliminar 'de-' seguido de un guion
     codigo = re.sub(
         r"-+", "-", codigo
-    )  # Replace multiple consecutive hyphens with a single hyphen
+    )  # Reemplazar múltiples guiones consecutivos por un solo guion
     codigo = re.sub(
         r"-(\d{2})(\d{2})$", r"-\2", codigo
-    )  # Convert 4-digit years to 2-digit if necessary
+    )  # Convertir años de 4 dígitos a 2 dígitos si es necesario
     return codigo
 
 
@@ -182,6 +181,10 @@ def parse_date(date_str):
 # Función para calcular la similitud entre dos textos
 def es_similar(texto1, texto2):
     return SequenceMatcher(None, texto1, texto2).ratio()
+
+
+# Lista de verbos comunes para identificar peticiones (en infinitivo o imperativo)
+VERBOS_COMUNES = r"\b(solicitar|realizar|suministrar|ordenar|iniciar|conceder|proteger|amparar|otorgar|dictaminar|evaluar|exigir|pedir|valorar|determinar|tutelar)\b"
 
 
 def buscar_patrones_en_texto(TutelaSentTemp):
@@ -199,27 +202,29 @@ def buscar_patrones_en_texto(TutelaSentTemp):
 
     # Conectar a la base de datos MongoDB
     db = get_db()
-    collection = db["sentenciasOld"]
+    collection = db["sentencias"]
 
-    # Iterar sobre cada sentencia en TutelaSentTemp
-    for sentencia_adjunta in TutelaSentTemp:
-        sentencia_adjunta_normalizada = (
-            re.sub(r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", sentencia_adjunta).lower().strip()
+    # Crear un pipeline que busque coincidencias de las sentencias en la base de datos
+    pipeline = [
+        {"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1}},
+        {"$sort": {"fecha_sentencia": -1}},
+    ]
+    # Iteramos directamente sobre el cursor sin convertirlo en lista
+    for doc in collection.aggregate(pipeline):
+        providencia_db = doc["providencia"].lower().strip()
+        providencia_db_normalizada = re.sub(
+            r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", providencia_db
         )
 
-        # Iterar sobre los documentos de la base de datos para buscar coincidencias con 'providencia'
-        for doc in collection.find():
-            providencia_db = doc["providencia"].lower().strip()
-
-            # Normalizar el formato de 'providencia' en la base de datos (ej: 'T-310/24' a 'T-310-24')
-            providencia_db_normalizada = re.sub(
-                r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", providencia_db
+        for sentencia_adjunta in TutelaSentTemp:
+            sentencia_adjunta_normalizada = (
+                re.sub(r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", sentencia_adjunta)
+                .lower()
+                .strip()
             )
-
-            # Comparar la sentencia de la base de datos con la sentencia adjunta normalizada
             if sentencia_adjunta_normalizada == providencia_db_normalizada:
                 print(
-                    f"Coincidencia encontrada: '{sentencia_adjunta_normalizada}' en documento ID: {doc['_id']}"
+                    f"Coincidencia encontrada: '{providencia_db_normalizada}' en documento ID: {doc['_id']}"
                 )
                 salida1.append(providencia_db_normalizada)
 
@@ -227,128 +232,106 @@ def buscar_patrones_en_texto(TutelaSentTemp):
     return salida1
 
 
-def buscar_derechos_en_mongo(TutelaDerecTemp, salida1, limitar_busqueda=True):
-    print(
-        "TutelaDerecTemp contiene",
-        len(TutelaDerecTemp),
-        "elementos como entrada analisis derechos",
-    )
-    for i, derecho in enumerate(TutelaDerecTemp):
-        print(f"Petición {i + 1}: {derecho}")
+# Función para calcular la similitud entre dos textos (debes definir esta función)
+def es_similar(derecho_a, derecho_b):
+    # Lógica de comparación, por ejemplo con Levenshtein o alguna métrica de similitud
+    pass
 
-    # Verificar si hay derechos fundamentales invocados
-    if not TutelaDerecTemp:
+
+def buscar_derechos_en_mongo(TutelaDerecTemp):
+    print(
+        f"TutelaDerecTemp contiene {len(TutelaDerecTemp)} elementos como entrada análisis derechos"
+    )
+
+    # Accedemos a la base de datos
+    db = get_db()
+    collection = db["sentencias"]
+
+    # Preparamos el pipeline de búsqueda
+    pipeline = [
+        {"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1, "derechos": 1}},
+        {"$sort": {"fecha_sentencia": -1}},  # Ordenamos por la fecha de sentencia
+    ]
+
+    salida2 = []
+    coincidencias_derechos = 0
+
+    # Iteramos sobre los documentos en el resultado del pipeline
+    for doc in collection.aggregate(pipeline):
+        derechos_db = (
+            doc.get("derechos", "").lower().strip()
+        )  # Convertimos derechos a minúsculas
+        derechos_db_normalizado = re.sub(
+            r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derechos_db
+        )  # Normalizamos el formato
+
+        for derecho in TutelaDerecTemp:
+            derecho_normalizado = re.sub(
+                r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derecho.lower().strip()
+            )
+
+            # Verificamos la similitud entre el derecho en la base de datos y el derecho de la lista de entrada
+            similitud = es_similar(derecho_normalizado, derechos_db_normalizado)
+
+            if similitud > 0.6:
+                coincidencias_derechos += 1
+                print(
+                    f"Similitud alta entre '{derecho_normalizado}' y '{derechos_db_normalizado}' (Similitud: {similitud})"
+                )
+
+                # Si se encuentra una coincidencia, agregamos el documento a la salida
+                salida2.append(
+                    {
+                        "_id": doc["_id"],
+                        "providencia": doc["providencia"],
+                        "fecha_sentencia": doc["fecha_sentencia"],
+                        "similitud": similitud,
+                    }
+                )
+
+    # Ordenamos por similitud y limitamos a 100 resultados
+    salida2 = sorted(salida2, key=lambda x: x["similitud"], reverse=True)[:100]
+
+    return salida2
+
+
+# Función para calcular la similitud entre dos textos (debes definir esta función)
+def es_similar(texto_a, texto_b):
+    # Lógica de comparación, por ejemplo con Levenshtein o alguna métrica de similitud
+    pass
+
+
+def buscar_peticiones_con_ids(salida2, TutelaPetTemp):
+    print(
+        f"TutelaPetTemp contiene {len(TutelaPetTemp)} elementos como entrada análisis ids"
+    )
+
+    if not TutelaPetTemp:
         print(
             "Error: No se encontraron los datos de derechos fundamentales invocados en la sesión."
         )
-        return salida1, []
-
-    # Imprimir el número de derechos fundamentales
-    print(
-        f"TutelaDerecTemp contiene {len(TutelaDerecTemp)} elementos para análisis en MongoDB"
-    )
-
-    # Inicializar la lista de documentos coincidentes
-    SentDerecTempFiles = []
+        return salida2  # Si no hay peticiones, retornamos `salida2` sin modificaciones
 
     # Conectar a la base de datos MongoDB
     db = get_db()
     collection = db["sentencias"]
 
-    # Iterar sobre los documentos de la colección 'sentencias'
-    for doc in collection.find():
-        if "derechos" in doc and isinstance(
-            doc["derechos"], list
-        ):  # Verificar que el campo 'derechos' es una lista
-            derechos_db = [derecho.lower().strip() for derecho in doc["derechos"]]
-            print(
-                f"Verificando derechos en documento ID: {doc['_id']} con derechos: {derechos_db}"
-            )
-
-            # Normalizar los derechos de MongoDB (eliminar caracteres especiales, limpiar guiones, etc.)
-            derechos_db_normalizados = [
-                re.sub(r"[\W_]+$", "", d.replace("-", "").strip().lower())
-                for d in derechos_db
-            ]
-            print(f"Derechos en documento (normalizados): {derechos_db_normalizados}")
-
-            coincidencias_derechos = 0  # Contador de coincidencias de derechos
-
-            # Verificar coincidencias exactas y parciales entre los derechos de MongoDB y los invocados en TutelaDerecTemp
-            for derecho_invocado in TutelaDerecTemp:
-                derecho_invocado_normalizado = re.sub(
-                    r"[\W_]+$", "", derecho_invocado.replace("-", "").strip().lower()
-                )
-
-                # Comparar cada derecho invocado con los derechos de la base de datos
-                if derecho_invocado_normalizado in derechos_db_normalizados:
-                    coincidencias_derechos += 1
-                    print(
-                        f"Coincidencia exacta encontrada para '{derecho_invocado_normalizado}' en documento ID: {doc['_id']}"
-                    )
-
-                # Comparar similitud parcial
-                for derecho_db in derechos_db_normalizados:
-                    similitud = es_similar(derecho_invocado_normalizado, derecho_db)
-                    if similitud > 0.6:
-                        coincidencias_derechos += 1
-                        print(
-                            f"Similitud alta encontrada entre '{derecho_invocado_normalizado}' y '{derecho_db}' en documento ID: {doc['_id']} (Similitud: {similitud})"
-                        )
-
-            # Si hay coincidencias, añadir el documento a SentDerecTempFiles
-            if coincidencias_derechos > 0:
-                SentDerecTempFiles.append((doc["_id"], coincidencias_derechos))
-                print(
-                    f"Total de coincidencias de derechos para documento ID {doc['_id']}: {coincidencias_derechos}"
-                )
-
-    # salida2 será el resultado de agregar los documentos encontrados a salida1
-    salida2 = salida1  # Partimos de la lista de salida1
-    for doc_id, _ in SentDerecTempFiles:
-        doc = collection.find_one({"_id": doc_id})
-        if doc and doc.get("providencia"):
-            salida2.append(
-                doc["providencia"]
-            )  # Agregar la providencia a la lista de salida2
-
-    return salida2, SentDerecTempFiles
-
-
-def buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp):
-    print(
-        "TutelaPetTemp contiene",
-        len(TutelaPetTemp),
-        "elementos como entrada analisis id´s",
-    )
-    for i, peticion in enumerate(TutelaPetTemp):
-        print(f"Petición {i + 1}: {peticion}")
-
-    # Inicializar salida3 para evitar errores si no se encuentran coincidencias
-    salida3 = (
-        salida2  # Si no se encuentran coincidencias, salida3 debe ser igual a salida2
-    )
-
-    # Verificar si hay peticiones
-    if not TutelaPetTemp:
-        print("Error: No se encontraron las peticiones.")
-        return salida3
-
-    db = get_db()
-    collection = db["sentencias"]
-
+    salida3 = []
     SentPetTempFiles = []
 
-    # Recorrer los IDs obtenidos en SentDerecTempFiles
-    for doc_id, _ in SentDerecTempFiles:
+    # Recorrer los IDs obtenidos en salida2
+    for doc_info in salida2:
+        doc_id = doc_info["_id"]  # Asumimos que en salida2 cada documento tiene '_id'
         doc = collection.find_one({"_id": doc_id})
         if doc:
-            texto = doc["texto"].lower()  # Texto completo del documento
+            texto = doc.get(
+                "texto", ""
+            ).lower()  # Texto completo del documento en minúsculas
             coincidencias_peticiones = 0
 
             print(f"Analizando documento con ID {doc_id}")
 
-            # Comparar las peticiones con el texto del documento (similitud flexible)
+            # Comparar las peticiones con el texto del documento
             for peticion in TutelaPetTemp:
                 peticion_normalizada = peticion.lower().strip()
 
@@ -360,7 +343,9 @@ def buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp):
                     )
 
                 # Coincidencia parcial utilizando similitud
-                oraciones_documento = re.split(r"[.!?]", texto)
+                oraciones_documento = re.split(
+                    r"[.!?]", texto
+                )  # Dividir el documento en oraciones
                 for oracion in oraciones_documento:
                     similitud = es_similar(peticion_normalizada, oracion.strip())
                     if similitud > 0.65:  # Umbral de similitud flexible
@@ -373,24 +358,13 @@ def buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp):
                 SentPetTempFiles.append((doc, coincidencias_peticiones))
 
     if SentPetTempFiles:
+        # Ordenamos los resultados por el número de coincidencias y limitamos el número de resultados
         SentPetTempFiles = sorted(SentPetTempFiles, key=lambda x: x[1], reverse=True)[
             :5
         ]
-        # Agregar los documentos con coincidencias a la lista final de sentencias
         salida3 = salida2 + [doc["providencia"] for doc, _ in SentPetTempFiles]
 
     return salida3
-
-
-# habilita los siguiente codigos si quieres limitar la busqueda
-# def get_sentencia(str, limitar_busqueda=True):  # Procesa solo 100 documentos
-# Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
-# sentencia_list, SentDerecTempFiles = buscar_derechos_en_mongo(sentencia_list, limitar_busqueda)
-
-# habilita los siguiente codigos si NO quieres limitar la busqueda
-# def get_sentencia(str, limitar_busqueda=False):  # Procesa todos los documentos
-# Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
-# sentencia_list, SentDerecTempFiles = buscar_derechos_en_mongo(sentencia_list, limitar_busqueda=False)
 
 
 def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
@@ -404,13 +378,11 @@ def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
     print(f"Resultados de buscar_patrones_en_texto: {salida1}")
 
     # Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
-    salida2, SentDerecTempFiles = buscar_derechos_en_mongo(TutelaDerecTemp, salida1)
-    print(
-        f"Resultados de buscar_derechos_en_mongo: Salida2: {salida2}, SentDerecTempFiles: {SentDerecTempFiles}"
-    )
+    salida2 = buscar_derechos_en_mongo(TutelaDerecTemp)
+    print(f"Resultados de buscar_derechos_en_mongo: Salida2: {salida2}")
 
     # Parte 3: Búsqueda en Mongo de los IDs obtenidos y matching con TutelaPetTemp
-    salida3 = buscar_peticiones_con_ids(SentDerecTempFiles, salida2, TutelaPetTemp)
+    salida3 = buscar_peticiones_con_ids(salida2, salida2, TutelaPetTemp)
     print(f"Resultados de buscar_peticiones_con_ids: {salida3}")
 
     # Combinar las salidas sin duplicar elementos
@@ -420,10 +392,31 @@ def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
             if item not in sentencia_list:
                 sentencia_list.append(item)
 
-    # Imprimir sentencia_list para asegurar que los resultados son correctos
-    print(
-        f"Sentencia list final (combinación de salida1, salida2 y salida3 sin duplicados): {sentencia_list}"
-    )
+    # Imprimir el formato pipeline para verificar la salida
+    print(f"Formato final para el frontend (pipeline): {sentencia_list}")
+
+    # Crear el formato esperado por el frontend basado en el pipeline
+    db = get_db()
+    collection = db["sentencias"]
+
+    # Crear un pipeline para devolver los documentos que coincidan con sentencia_list
+    pipeline = [
+        {
+            "$match": {
+                "_id": {
+                    "$in": [item["_id"] for item in sentencia_list if "_id" in item]
+                }
+            }
+        },
+        {"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1}},
+        {"$sort": {"fecha_sentencia": -1}},
+    ]
+
+    # Ejecutar el pipeline y devolver los resultados en el formato esperado
+    sentencia_list = list(collection.aggregate(pipeline=pipeline))
+
+    # Imprimir el formato final para verificar la salida
+    print(f"Sentencia final para el frontend (pipeline): {sentencia_list}")
 
     return sentencia_list
 
@@ -435,7 +428,15 @@ def generate_evidence_checklist(text):
     else:
         print("No JSON block found.")
         return
+    # Cargar el texto JSON en un objeto
     json_object = json.loads(json_text)
+
+    # Asegurar que cada evidencia solo tenga dos checkboxes
+    for item in json_object:
+        if "evidencias" in item:
+            for evidencia in item["evidencias"]:
+                # Añadir las opciones "Cumple" y "No cumple" por cada evidencia
+                evidencia["checkboxes"] = ["Cumple", "No cumple"]
 
     return json_object
 
@@ -521,20 +522,36 @@ def save_tutela(user, title):
     loading_data = get_current_state(user)
     loading_data["title"] = title
     loading_data["modifiedAt"] = datetime.now()
+
+    # Asegúrate de que las evidencias se guarden correctamente
+    evidencias_cumplen = session.get("evidencias_cumplen", [])
+    evidencias_no_cumplen = session.get("evidencias_no_cumplen", [])
+
+    loading_data["evidencias_cumplen"] = evidencias_cumplen
+    loading_data["evidencias_no_cumplen"] = evidencias_no_cumplen
+
     db = get_db()
     results = db["results"]
     currents = db["current_state"]
+
+    # Verifica si ya existe un análisis con el mismo título
     pipeline = [
         {"$project": {"_id": 1, "title": 1, "user": 1}},
         {"$match": {"user": user, "title": title}},
     ]
     res = list(results.aggregate(pipeline=pipeline))
+
+    # Si ya existe, lo eliminamos para sobreescribir
     if len(res) > 0:
         results.delete_one({"user": user, "title": title})
 
+    # Insertar los datos en `results`
     results.insert_one(loading_data)
+
+    # También actualizamos el `current_state`
     currents.delete_one({"user": user})
     currents.insert_one(loading_data)
+
     return {"message": "sucess"}, 200
 
 
@@ -542,16 +559,27 @@ def set_tutela(user, title):
     db = get_db()
     results = db["results"]
     currents = db["current_state"]
+
+    # Buscar los datos guardados en `results`
     set_data = results.find_one({"user": user, "title": title})
 
-    currents.delete_one({"user": user})
-    currents.insert_one(set_data)
-    return {"message": "sucess"}, 200
+    # Si los datos se encuentran, los transferimos a `current_state`
+    if set_data:
+        currents.delete_one({"user": user})
+        currents.insert_one(set_data)
+
+        # Asegúrate de que las evidencias también se carguen en la sesión
+        session["evidencias_cumplen"] = set_data.get("evidencias_cumplen", [])
+        session["evidencias_no_cumplen"] = set_data.get("evidencias_no_cumplen", [])
+
+        return {"message": "sucess"}, 200
+    else:
+        return {"message": "Análisis no encontrado"}, 404
 
 
 def reset_current_state(user):
     db = get_db()
     currents = db["current_state"]
-    currents.delete_one({"user": user})
+    currents.delete_one({"user": user})  # Esto debe borrar el estado anterior
 
     return
