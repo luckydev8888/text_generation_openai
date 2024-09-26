@@ -504,11 +504,6 @@ def analysis_judgement():
         user = session["user_info"]
         articulo_result = get_current_data_field(user, "articulo_result")
 
-        sentencia_list = get_sentencia(pdf_resume, articulo_result)
-        sentencia_list = get_sentencia(pdf_resume, articulo_result)
-        update_current_state(user, "sentencia_list", sentencia_list)
-        global sentence_result
-
         # Cambiar 'pdf_resumen' a 'pdf_resume' porque así se guarda en analysis_pdf
         pdf_resume = get_current_data_field(
             user, "pdf_resume"
@@ -537,8 +532,9 @@ def analysis_judgement():
 
         # Usar pdf_resume en lugar de pdf_resumen para obtener las sentencias
         sentencia_list = get_sentencia(
-            TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp
+            pdf_resume, TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp
         )  # aqui va pdf_resume en el futuro
+
         update_current_state(user, "sentencia_list", sentencia_list)
 
         global sentence_result

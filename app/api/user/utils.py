@@ -226,102 +226,225 @@ def buscar_patrones_en_texto(TutelaSentTemp):
                 print(
                     f"Coincidencia encontrada: '{providencia_db_normalizada}' en documento ID: {doc['_id']}"
                 )
-                salida1.append(providencia_db_normalizada)
+                salida1.append(
+                    {
+                        "_id": doc["_id"],
+                        "providencia": doc["providencia"],
+                        "fecha_sentencia": doc["fecha_sentencia"],
+                    }
+                )
 
     print(f"Total de coincidencias encontradas salida1: {len(salida1)}")
     return salida1
 
 
-# Función para calcular la similitud entre dos textos (debes definir esta función)
-def es_similar(derecho_a, derecho_b):
-    # Lógica de comparación, por ejemplo con Levenshtein o alguna métrica de similitud
-    pass
+def normalize_pdf_resume(pdf_resume):
+    sections = pdf_resume.split("\n")
+
+    normalizadas = []
+    for section in sections:
+        normalizada = re.sub(
+            r"^\b(primero|segundo|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo||[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*",
+            "",
+            section,
+            flags=re.IGNORECASE,
+        ).strip()
+        normalizada = re.sub(
+            r"\b(Derechos Fundamentales Invocados|Hechos Relevantes|Peticiones|Pruebas Adjuntas|Sentencias)\b",
+            "",
+            normalizada,
+            flags=re.IGNORECASE,
+        ).strip()
+        normalizada = re.sub(
+            r"^\d+\.\s*", "", normalizada
+        ).strip()  # Eliminar números al inicio
+        normalizada = re.sub(
+            r"[\W_]+$", "", normalizada
+        ).strip()  # Eliminar caracteres especiales al final
+        normalizada = re.sub(
+            r"\s+", " ", normalizada
+        ).strip()  # Unificar espacios múltiples
+
+        if normalizada:
+            normalizadas.append(normalizada)
+
+    return normalizadas
 
 
-def buscar_derechos_en_mongo(TutelaDerecTemp):
-    print(
-        f"TutelaDerecTemp contiene {len(TutelaDerecTemp)} elementos como entrada análisis derechos"
-    )
+def normalize_tema(tema):
+    sections = re.split(r"[.]", tema)
 
-    # Accedemos a la base de datos
+    normalizadas = []
+    for section in sections:
+        normalizada = re.sub(
+            r"^\b(primero|segundo|tercero|cuarto|quinto|sexto|séptimo|octavo|noveno|décimo||[a-zA-Z]\)|\d+[*,+]+[\.\)]|•|-)\b[\s]*",
+            "",
+            section,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        normalizada = re.sub(
+            r"^\d+\.\s*", "", normalizada
+        ).strip()  # Eliminar números al inicio
+        normalizada = re.sub(
+            r"[\W_]+$", "", normalizada
+        ).strip()  # Eliminar caracteres especiales al final
+        normalizada = re.sub(
+            r"\s+", " ", normalizada
+        ).strip()  # Unificar espacios múltiples
+
+        if normalizada:
+            normalizadas.append(normalizada)
+
+    return normalizadas
+
+
+def buscar_tema_en_mongo(pdf_resume, limitar_busqueda=True):
+    # Verificar si hay pdf_resume fundamentales invocados
+    if not pdf_resume:
+        print(
+            "Error: No se encontraron los datos de pdf_resume fundamentales invocados en la sesión."
+        )
+        return []
+
+    # normalize pdf_resume
+    pdf_resume_normalizados = normalize_pdf_resume(pdf_resume)
+
+    # Conectar a la base de datos MongoDB
     db = get_db()
     collection = db["sentencias"]
 
     # Preparamos el pipeline de búsqueda
     pipeline = [
-        {"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1, "derechos": 1}},
+        {"$project": {"_id": 1, "providencia": 1, "fecha_sentencia": 1, "tema": 1}},
         {"$sort": {"fecha_sentencia": -1}},  # Ordenamos por la fecha de sentencia
     ]
 
     salida2 = []
-    coincidencias_derechos = 0
+    SentTemaTempFiles = []
 
-    # Iteramos sobre los documentos en el resultado del pipeline
     for doc in collection.aggregate(pipeline):
-        derechos_db = (
-            doc.get("derechos", "").lower().strip()
-        )  # Convertimos derechos a minúsculas
-        derechos_db_normalizado = re.sub(
-            r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derechos_db
-        )  # Normalizamos el formato
+        tema_db = doc.get("tema", "").lower().strip()  # Convertimos tema a minúsculas
+        tema_db_normalizados = normalize_tema(tema_db)  # Normalizamos el formato
 
-        for derecho in TutelaDerecTemp:
-            derecho_normalizado = re.sub(
-                r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derecho.lower().strip()
-            )
+        coincidencias_temas = 0
 
-            # Verificamos la similitud entre el derecho en la base de datos y el derecho de la lista de entrada
-            similitud = es_similar(derecho_normalizado, derechos_db_normalizado)
+        for tema_db_normalizado in tema_db_normalizados:
+            for normalizado in pdf_resume_normalizados:
+                similitud = es_similar(normalizado, tema_db_normalizado)
 
-            if similitud > 0.6:
-                coincidencias_derechos += 1
-                print(
-                    f"Similitud alta entre '{derecho_normalizado}' y '{derechos_db_normalizado}' (Similitud: {similitud})"
-                )
+                if similitud > 0.6:
+                    coincidencias_temas += 1
+                    print(
+                        f"Similitud alta entre '{normalizado}' y '{tema_db_normalizado}' (Similitud: {similitud}) \n"
+                    )
 
-                # Si se encuentra una coincidencia, agregamos el documento a la salida
-                salida2.append(
-                    {
-                        "_id": doc["_id"],
-                        "providencia": doc["providencia"],
-                        "fecha_sentencia": doc["fecha_sentencia"],
-                        "similitud": similitud,
-                    }
-                )
+        if coincidencias_temas > 0:
+            # Si se encuentra una coincidencia, agregamos el documento a la salida
+            SentTemaTempFiles.append((doc, coincidencias_temas))
 
     # Ordenamos por similitud y limitamos a 100 resultados
-    salida2 = sorted(salida2, key=lambda x: x["similitud"], reverse=True)[:100]
+    if SentTemaTempFiles:
+        # Ordenamos los resultados por el número de coincidencias y limitamos el número de resultados
+        SentTemaTempFiles = sorted(SentTemaTempFiles, key=lambda x: x[1], reverse=True)[
+            :100
+        ]
+        salida2 = [
+            {
+                "_id": doc["_id"],
+                "providencia": doc["providencia"],
+                "fecha_sentencia": doc["fecha_sentencia"],
+            }
+            for doc, _ in SentTemaTempFiles
+        ]
+
+    # salida2 = sorted(salida2, key=lambda x: x["similitud"], reverse=True)[:100]
 
     return salida2
 
 
-# Función para calcular la similitud entre dos textos (debes definir esta función)
-def es_similar(texto_a, texto_b):
-    # Lógica de comparación, por ejemplo con Levenshtein o alguna métrica de similitud
-    pass
+def buscar_derechos_en_mongo(salida2, TutelaDerecTemp):
+    print(
+        f"TutelaDerecTemp contiene {len(TutelaDerecTemp)} elementos como entrada análisis derechos"
+    )
+
+    if not TutelaDerecTemp:
+        print(
+            "Error: No se encontraron los datos de derechos fundamentales invocados en la sesión."
+        )
+        return salida2  # Si no hay derechos, retornamos `salida2` sin modificaciones
+
+    # Accedemos a la base de datos
+    db = get_db()
+    collection = db["sentencias"]
+
+    salida3 = []
+    # coincidencias_derechos = 0
+
+    # Recorrer los IDs obtenidos en salida2
+    for doc_info in salida2:
+        doc_id = doc_info["_id"]  # Asumimos que en salida2 cada documento tiene '_id'
+        doc = collection.find_one({"_id": doc_id})
+        if doc:
+            derechos_db = (
+                doc.get("derechos", "").lower().strip()
+            )  # Convertimos derechos a minúsculas
+            derechos_db_normalizado = re.sub(
+                r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derechos_db
+            )  # Normalizamos el formato
+
+            for derecho in TutelaDerecTemp:
+                derecho_normalizado = re.sub(
+                    r"(\w+)-(\d+)/(\d+)", r"\1-\2-\3", derecho.lower().strip()
+                )
+
+                # Verificamos la similitud entre el derecho en la base de datos y el derecho de la lista de entrada
+                similitud = es_similar(derecho_normalizado, derechos_db_normalizado)
+
+                if similitud > 0.6:
+                    # coincidencias_derechos += 1
+                    print(
+                        f"Similitud alta entre '{derecho_normalizado}' y '{derechos_db_normalizado}' (Similitud: {similitud})"
+                    )
+
+                    # Si se encuentra una coincidencia, agregamos el documento a la salida
+                    salida3.append(
+                        {
+                            "_id": doc["_id"],
+                            "providencia": doc["providencia"],
+                            "fecha_sentencia": doc["fecha_sentencia"],
+                            "similitud": similitud,
+                        }
+                    )
+
+    # Ordenamos por similitud y limitamos a 20 resultados
+    salida3 = sorted(salida3, key=lambda x: x["similitud"], reverse=True)[:20]
+
+    return salida3
 
 
-def buscar_peticiones_con_ids(salida2, TutelaPetTemp):
+def buscar_peticiones_con_ids(salida3, TutelaPetTemp):
     print(
         f"TutelaPetTemp contiene {len(TutelaPetTemp)} elementos como entrada análisis ids"
     )
 
     if not TutelaPetTemp:
         print(
-            "Error: No se encontraron los datos de derechos fundamentales invocados en la sesión."
+            "Error: No se encontraron los datos de peticiones fundamentales invocados en la sesión."
         )
-        return salida2  # Si no hay peticiones, retornamos `salida2` sin modificaciones
+        return salida3  # Si no hay peticiones, retornamos `salida3` sin modificaciones
 
     # Conectar a la base de datos MongoDB
     db = get_db()
     collection = db["sentencias"]
 
-    salida3 = []
+    salida4 = salida3.copy()  # Creating a copy
+
     SentPetTempFiles = []
 
-    # Recorrer los IDs obtenidos en salida2
-    for doc_info in salida2:
-        doc_id = doc_info["_id"]  # Asumimos que en salida2 cada documento tiene '_id'
+    # Recorrer los IDs obtenidos en salida3
+    for doc_info in salida3:
+        doc_id = doc_info["_id"]  # Asumimos que en salida3 cada documento tiene '_id'
         doc = collection.find_one({"_id": doc_id})
         if doc:
             texto = doc.get(
@@ -360,14 +483,21 @@ def buscar_peticiones_con_ids(salida2, TutelaPetTemp):
     if SentPetTempFiles:
         # Ordenamos los resultados por el número de coincidencias y limitamos el número de resultados
         SentPetTempFiles = sorted(SentPetTempFiles, key=lambda x: x[1], reverse=True)[
-            :5
+            :7
         ]
-        salida3 = salida2 + [doc["providencia"] for doc, _ in SentPetTempFiles]
+        salida4 = [
+            {
+                "_id": doc["_id"],
+                "providencia": doc["providencia"],
+                "fecha_sentencia": doc["fecha_sentencia"],
+            }
+            for doc, _ in SentPetTempFiles
+        ]
 
-    return salida3
+    return salida4
 
 
-def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
+def get_sentencia(pdf_resume, TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
     print("Iniciando get_sentencia...")
     print(f"TutelaDerecTemp: {TutelaDerecTemp}")
     print(f"TutelaPetTemp: {TutelaPetTemp}")
@@ -377,17 +507,25 @@ def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
     salida1 = buscar_patrones_en_texto(TutelaSentTemp)
     print(f"Resultados de buscar_patrones_en_texto: {salida1}")
 
-    # Parte 2: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
-    salida2 = buscar_derechos_en_mongo(TutelaDerecTemp)
-    print(f"Resultados de buscar_derechos_en_mongo: Salida2: {salida2}")
+    # Parte 2: Búsqueda de tema en la base de datos (pdf_resume)
+    salida2 = buscar_tema_en_mongo(pdf_resume)
+    print(f"Resultados de buscar_tema_en_mongo: Salida2: {salida2}")
 
-    # Parte 3: Búsqueda en Mongo de los IDs obtenidos y matching con TutelaPetTemp
-    salida3 = buscar_peticiones_con_ids(salida2, salida2, TutelaPetTemp)
-    print(f"Resultados de buscar_peticiones_con_ids: {salida3}")
+    # Parte 3: Búsqueda de derechos en la base de datos (TutelaDerecTemp)
+    salida3 = buscar_derechos_en_mongo(salida2, TutelaDerecTemp)
+    print(f"Resultados de buscar_derechos_en_mongo: Salida3: {salida3}")
+
+    # Parte 4: Búsqueda en Mongo de los IDs obtenidos y matching con TutelaPetTemp
+    salida4 = buscar_peticiones_con_ids(salida3, TutelaPetTemp)
+    print(f"Resultados de buscar_peticiones_con_ids: {salida4}")
+
+    print(
+        f"Resultados de get_sentencia: \n salida1 => {salida1} \n salida4 => {salida4}"
+    )
 
     # Combinar las salidas sin duplicar elementos
     sentencia_list = []
-    for salida in [salida1, salida2, salida3]:
+    for salida in [salida1, salida4]:
         for item in salida:
             if item not in sentencia_list:
                 sentencia_list.append(item)
@@ -416,7 +554,6 @@ def get_sentencia(TutelaDerecTemp, TutelaPetTemp, TutelaSentTemp):
     sentencia_list = list(collection.aggregate(pipeline=pipeline))
 
     # Imprimir el formato final para verificar la salida
-    print(f"Sentencia final para el frontend (pipeline): {sentencia_list}")
 
     return sentencia_list
 
@@ -467,7 +604,6 @@ def get_history(user, title=""):
 
 
 def get_current_state(user):
-    print(user)
     db = get_db()
     collection = db["current_state"]
     history = collection.find_one({"user": user})
