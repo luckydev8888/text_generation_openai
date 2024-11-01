@@ -8,8 +8,6 @@ __pycache__/
 venv/
 myenv/
 
-# Environment variables
-.env
 
 # Database
 *.sqlite3
