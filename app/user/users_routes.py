@@ -196,6 +196,11 @@ def userAuthorize():
 def userRegisterPage():
     return render_template('user_register.html')
 
+
+@users_bp.route('/forgotpassword')
+def userForgotpasswordpage():
+    return render_template('user_forgotpassword.html')
+
 @users_bp.route('register/users', methods=['POST'])
 def register_user():
     if request.method == 'POST':
